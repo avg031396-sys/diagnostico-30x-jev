@@ -1,0 +1,92 @@
+{
+  "bloques": [
+    {
+      "id": "inmersion",
+      "familia": "escala_y_estrategia",
+      "preguntas": [
+        {
+          "id": "formato",
+          "texto": "¿Presencial u online?",
+          "opciones": [
+            { "id": "presencial", "etiqueta": "Presencial" },
+            { "id": "online", "etiqueta": "Online" },
+            { "id": "indiferente", "etiqueta": "Me da igual" }
+          ]
+        },
+        {
+          "id": "facturacion",
+          "texto": "Facturación anual",
+          "opciones": [
+            { "id": "<100k", "etiqueta": "Menos de USD 100 mil" },
+            { "id": "100k-1M", "etiqueta": "De USD 100 mil a 1 millón" },
+            { "id": "1M-20M", "etiqueta": "De USD 1 a 20 millones" },
+            { "id": ">20M", "etiqueta": "Más de USD 20 millones" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ventas",
+      "familia": "ventas",
+      "preguntas": [
+        {
+          "id": "cliente",
+          "texto": "¿Le vendes a empresas o a personas?",
+          "opciones": [
+            { "id": "b2b", "etiqueta": "A empresas" },
+            { "id": "b2c", "etiqueta": "A personas" }
+          ]
+        },
+        {
+          "id": "reuniones",
+          "texto": "¿Cuántas reuniones de venta tienes por semana?",
+          "solo_si": { "cliente": "b2b" },
+          "opciones": [
+            { "id": "menos_20", "etiqueta": "Menos de 20" },
+            { "id": "20_o_mas", "etiqueta": "20 o más" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ia",
+      "familia": "inteligencia_artificial",
+      "preguntas": [
+        {
+          "id": "uso_ia",
+          "texto": "¿La IA es para ti, para tu equipo o para construir producto?",
+          "opciones": [
+            { "id": "personal", "etiqueta": "Para mí" },
+            { "id": "equipo", "etiqueta": "Para mi equipo" },
+            { "id": "producto", "etiqueta": "Para construir producto" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capital",
+      "familia": "capital",
+      "preguntas": [
+        {
+          "id": "inversion_previa",
+          "texto": "¿Ya levantaste inversión antes?",
+          "opciones": [{ "id": "no", "etiqueta": "Todavía no" }, { "id": "si", "etiqueta": "Sí" }]
+        }
+      ]
+    },
+    {
+      "id": "growth",
+      "familia": "growth",
+      "preguntas": [
+        {
+          "id": "rol_growth",
+          "texto": "¿Diriges el área o la ejecutas?",
+          "opciones": [
+            { "id": "dirijo", "etiqueta": "La dirijo" },
+            { "id": "ejecuto", "etiqueta": "La ejecuto" }
+          ]
+        }
+      ]
+    }
+  ]
+}
