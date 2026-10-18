@@ -412,3 +412,7 @@ h3 {
 main > section {
   margin-top: var(--espacio-8);
 }
+
+.desplazable {
+  overflow-x: auto;
+}

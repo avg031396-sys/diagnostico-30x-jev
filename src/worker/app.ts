@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { diagnosticos } from "./diagnosticos.ts";
+import { qa } from "./qa.ts";
 import { paginaResultado, resultados } from "./resultados.ts";
 import { cabeceras, limitarDiagnosticos, manejarError } from "./seguridad.ts";
 
@@ -23,6 +24,7 @@ app.onError(manejarError);
 app.get("/api/salud", (c) => c.json({ ok: true, modo: c.env.JEV_MODE }));
 app.route("/api/diagnosticos", diagnosticos);
 app.route("/api/resultados", resultados);
+app.route("/api/qa", qa);
 app.get("/r/:id", paginaResultado);
 
 app.notFound((c) => {
