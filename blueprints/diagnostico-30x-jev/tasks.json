@@ -1,0 +1,691 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Worker Hono con /api/salud, esquema D1 y test de secretos",
+    "epic": "01-base-motor-jev",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `npm run test:e2e -- tests/e2e/salud.spec.ts` pide `GET /api/salud` a `wrangler dev` THE SYSTEM SHALL responder 200 con el cuerpo `{\"ok\":true,\"modo\":\"mock\"}`.",
+      "WHEN esa misma suite pide `/` y `/no-existe` THE SYSTEM SHALL responder 200 con el texto `Diagnóstico 30X con JEV` y 404 con el texto `Esta página no existe`.",
+      "WHEN `npm run db:migrar` corre sobre la D1 local THE SYSTEM SHALL salir con 0 y dejar las tablas `leads`, `resultados` y `qa_runs` en `sqlite_master`.",
+      "WHEN `npm test -- tests/seguridad/secretos.test.ts` escanea `src/`, `public/`, `scripts/`, `migrations/` y los archivos de la raíz THE SYSTEM SHALL encontrar cero coincidencias de los patrones prohibidos y salir con 0.",
+      "WHEN `npm run typecheck`, `npm run lint` y `npm run build` corren THE SYSTEM SHALL salir con 0 cada uno.",
+      "WHEN `npm run deploy:prueba` corre (`wrangler deploy --dry-run`) THE SYSTEM SHALL empaquetar `src/worker/index.ts` con los assets de `./dist` y salir con 0."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run build",
+      "npm run db:migrar",
+      "npx wrangler d1 execute DB --local --json --command \"SELECT name FROM sqlite_master WHERE type='table'\" > .wrangler/tablas.json",
+      "grep -Eq '\"name\": ?\"leads\"' .wrangler/tablas.json",
+      "grep -Eq '\"name\": ?\"resultados\"' .wrangler/tablas.json",
+      "grep -Eq '\"name\": ?\"qa_runs\"' .wrangler/tablas.json",
+      "npm test -- tests/seguridad/secretos.test.ts",
+      "npm run test:e2e -- tests/e2e/salud.spec.ts",
+      "npm run deploy:prueba"
+    ],
+    "checkpoint": "step-01-base",
+    "files": [
+      "src/worker/app.ts",
+      "src/worker/index.ts",
+      "migrations/0001_inicial.sql",
+      "tests/seguridad/secretos.test.ts",
+      "tests/e2e/salud.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Catálogo, umbrales y armado de la llamada a JEV",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `construirPreguntas(\"founder\")` corre THE SYSTEM SHALL devolver una entrada por cada pregunta de `preguntas_jev` en `src/data/insumos-jev.json` (hoy 33), con clave igual al `id` de cada pregunta.",
+      "WHEN se serializa ese resultado con `JSON.stringify` THE SYSTEM SHALL no contener la clave `evidencia` ni el texto `youtube.com`.",
+      "WHEN el perfil no es `corporativo` THE SYSTEM SHALL dar a `programa_recomendado` un `criteria` con los 19 ids de opciones del JSON (17 programas + `requiere_revision` + `no_aplica`); WHEN el perfil es `corporativo` THE SYSTEM SHALL dejar solo `Planes_Corporativos`, `Multipliers` y `requiere_revision`.",
+      "WHEN `construirEstado` recibe una entrada que incluye `contacto` THE SYSTEM SHALL devolver solo claves de {`perfil`, `etapa`, `etapa_nivel`, `edad_hijo`, `reto_principal`, `dolores_elegidos`, `metas_elegidas`}, con `etapa_nivel` idea 0, mvp 1, arrancando 2, creciendo 3, consolidada 4.",
+      "WHEN `tests/jev/preguntas.test.ts` compara `src/motor/catalogo.ts` con los insumos THE SYSTEM SHALL encontrar los mismos 17 programas en el orden de las opciones del Choice, las mismas 6 familias con sus `se_activa_con` y `programas`, y una URL que empieza con `https://30x.com/` por programa.",
+      "WHEN se lee `src/data/umbrales.json` THE SYSTEM SHALL contener `umbral_recomendar` 0.6, `umbral_mostrar` 0.4, `umbral_choice` 0.5, `umbral_dolor` 0.6, `umbral_vaga` 0.6 y `delta_hermanos` 0.15."
+    ],
+    "verify": [
+      "npm test -- tests/jev/preguntas.test.ts",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-02-preguntas",
+    "files": [
+      "src/motor/catalogo.ts",
+      "src/jev/tipos.ts",
+      "src/jev/preguntas.ts",
+      "src/data/umbrales.json",
+      "tests/jev/preguntas.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Motor: requisitos en código, ranking y etiquetas",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `evaluarRequisito` recibe etapa `arrancando` (etapa_nivel 2) THE SYSTEM SHALL marcar `Sales_Machine` como cumplido y `Operaciones_con_AI` como no cumplido con la condición `tener un negocio en etapa Creciendo o Consolidada`.",
+      "WHEN la facturación respondida es `100k-1M` THE SYSTEM SHALL marcar `Inmersion_Ejecutiva` y `Multipliers` como no cumplidos aunque la etapa sea `consolidada`.",
+      "WHEN el perfil es `padre_madre_next` THE SYSTEM SHALL marcar `Next` como cumplido con `edad_hijo` 15 y como no cumplido con `edad_hijo` 12.",
+      "WHEN los fits son Sales_Machine 0.85, LinkedIn_Sales 0.80, AI_Sales 0.45 e Instagram_TikTok 0.15 con etapa `creciendo` THE SYSTEM SHALL ordenarlos así, etiquetarlos `Muy recomendado`, `Muy recomendado` y `Podría servirte`, y dejar a Instagram_TikTok fuera de `visibles()` por tener fit menor que 0.40.",
+      "WHEN Sales_Machine tiene el fit más alto (0.85) con etapa `idea` y Fundraising_Fundamentals tiene 0.70 THE SYSTEM SHALL dejar a Sales_Machine visible con su condición pendiente y elegir a Fundraising_Fundamentals como primer programa recomendable.",
+      "WHEN todas las familias de un programa quedan fuera de las confirmadas y hay al menos una familia confirmada THE SYSTEM SHALL usar 0.5 × fit para ese programa; WHEN no hay ninguna familia confirmada THE SYSTEM SHALL no degradar a ningún programa."
+    ],
+    "verify": [
+      "npm test -- tests/motor/ranking.test.ts",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-03-ranking",
+    "files": [
+      "src/motor/tipos.ts",
+      "src/motor/requisitos.ts",
+      "src/motor/ranking.ts",
+      "tests/motor/ranking.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Motor: dolores, aclaración, seguimientos y Choice",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN los Noul son bloqueo_comercial 0.85 y ventas_por_referidos 0.85 y los otros 8 Noul de dolor valen 0.10 THE SYSTEM SHALL detectar los chips `Pocas ventas` y `Vendes solo por referidos` y abrir solo la familia `ventas`.",
+      "WHEN respuesta_vaga es mayor que 0.60 o ninguna familia se abre THE SYSTEM SHALL marcar `necesita_aclaracion` true.",
+      "WHEN Sales_Machine y LinkedIn_Sales quedan a menos de 0.15 de fit con la familia `ventas` confirmada y `respuestas_seguimiento` es null THE SYSTEM SHALL devolver `pendiente` true con la pregunta `cliente` (y `reuniones` solo si cliente es `b2b`), nunca más de 2 preguntas en total.",
+      "WHEN `respuestas_seguimiento` es `{cliente: \"b2b\", reuniones: \"menos_20\"}` y el Choice es `Sales_Machine` con confianza 0.7 THE SYSTEM SHALL devolver `programa_top.id` `Sales_Machine`, tipo `recomendado` y `requiere_revision` false.",
+      "WHEN la confianza del Choice es menor que 0.50, o el Choice es distinto del n.º 1 después del seguimiento, o datos_incoherentes es mayor que 0.50 THE SYSTEM SHALL devolver `requiere_revision` true y tipo `preliminar` con el mismo n.º 1.",
+      "WHEN ningún programa llega a fit 0.40 THE SYSTEM SHALL devolver tipo `conversacion` con `programa_top` null."
+    ],
+    "verify": [
+      "npm test -- tests/motor/flujo.test.ts",
+      "npm test -- tests/motor",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-04-flujo-motor",
+    "files": [
+      "src/motor/dolores.ts",
+      "src/motor/seguimientos.ts",
+      "src/motor/resultado.ts",
+      "src/data/seguimientos.json",
+      "tests/motor/flujo.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Cliente JEV: fábrica, reintento y mock determinista",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el mock evalúa el reto `Vendo por referidos y no tengo un proceso comercial ordenado. Ya facturo unos USD 300 mil al año.` THE SYSTEM SHALL devolver 0.85 en bloqueo_comercial, ventas_por_referidos, fit_sales_machine y fit_linkedin_sales, 0.10 en los otros 8 Noul de dolor, y Choice `Sales_Machine` con confianza 0.7.",
+      "WHEN el mock evalúa dos veces la misma entrada THE SYSTEM SHALL devolver respuestas idénticas, `latencia_ms` 0, `usage.cost` 0 y `modelo` `mock`.",
+      "WHEN el reto no tiene ninguna palabra clave THE SYSTEM SHALL devolver respuesta_vaga 0.85 y Choice `no_aplica`; WHEN el reto contiene `simular falla de jev` THE SYSTEM SHALL lanzar `JevError` con código `JEV_HTTP`.",
+      "WHEN `crearClienteJev` recibe modo `mock` THE SYSTEM SHALL no llamar nunca al `fetch` inyectado (el espía registra 0 llamadas).",
+      "WHEN el cliente inyectado falla una vez y luego responde THE SYSTEM SHALL hacer que `evaluarConReintento` devuelva la segunda respuesta; WHEN falla dos veces THE SYSTEM SHALL lanzar `JevError`.",
+      "WHEN las preguntas vienen restringidas para `corporativo` THE SYSTEM SHALL responder solo las preguntas recibidas y elegir el Choice dentro de sus `criteria`, con `requiere_revision` si ningún programa permitido coincide."
+    ],
+    "verify": [
+      "npm test -- tests/jev/mock.test.ts",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-05-jev-mock",
+    "files": [
+      "src/jev/cliente.ts",
+      "src/jev/mock.ts",
+      "src/jev/mock-keywords.ts",
+      "tests/jev/mock.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Adaptadores composio-proxy y composio-jev con fixtures",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el adaptador composio-proxy evalúa con un `fetch` inyectado THE SYSTEM SHALL hacer un solo POST a `https://backend.composio.dev/api/v3.1/tools/execute/proxy` con cabecera `x-api-key`, `connected_account_id` igual a la cuenta configurada, `endpoint` `https://openrouter.ai/api/alpha/decisions`, `method` `POST` y `body` con `model` `typesafe/jev-1.14`, `state` y `questions`.",
+      "WHEN el `fetch` responde `{data: <tests/fixtures/openrouter-decision.json>, status: 200}` THE SYSTEM SHALL normalizar los Noul a números, el Choice a `{valor, confianza}`, el Score a `{valor, confianza}` y el costo desde `usage.cost`.",
+      "WHEN Composio responde `status` 500 dentro de su cuerpo o el HTTP es 401 THE SYSTEM SHALL lanzar `JevError` con código `JEV_HTTP`.",
+      "WHEN el `fetch` inyectado no responde en 8000 ms THE SYSTEM SHALL abortar y lanzar `JevError` con código `JEV_TIMEOUT` (probado con temporizadores falsos de Vitest).",
+      "WHEN composio-jev recibe `data` como texto JSON o como objeto con `answers` THE SYSTEM SHALL normalizar a la misma forma; WHEN no reconoce la estructura THE SYSTEM SHALL lanzar `JevError` con código `JEV_FORMATO`.",
+      "WHEN se inspecciona el cuerpo serializado de la petición THE SYSTEM SHALL no contener las claves `evidencia`, `nombre`, `email`, `whatsapp` ni `empresa`."
+    ],
+    "verify": [
+      "npm test -- tests/jev",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-06-jev-remotos",
+    "files": [
+      "src/jev/proxy.ts",
+      "src/jev/composio-jev.ts",
+      "src/jev/cliente.ts",
+      "tests/fixtures/openrouter-decision.json",
+      "tests/jev/adaptadores.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T7",
+    "title": "Revisión del bloque motor y JEV (compuerta)",
+    "epic": "01-base-motor-jev",
+    "dependencies": [
+      "E1-T4",
+      "E1-T6"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/02-motor-jev-abogado.md` con la línea `Herramienta: anthropic-skills:abogado-del-diablo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/02-motor-jev-cyber-neo.md` con la línea `Herramienta: cyber-neo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN se lee cada documento THE SYSTEM SHALL contener la tabla de hallazgos con la cabecera `| # | Severidad | Hallazgo | Estado | Corrección |`.",
+      "WHEN `npm run typecheck`, `npm run lint` y `npm test` corren después de las correcciones THE SYSTEM SHALL salir con 0, con 0 pruebas fallidas."
+    ],
+    "verify": [
+      "test -f docs/revisiones/02-motor-jev-abogado.md",
+      "test -f docs/revisiones/02-motor-jev-cyber-neo.md",
+      "grep -Eq '^Herramienta: (anthropic-skills:abogado-del-diablo|revisión manual \\(skill no disponible\\))$' docs/revisiones/02-motor-jev-abogado.md",
+      "grep -Eq '^Herramienta: (cyber-neo|revisión manual \\(skill no disponible\\))$' docs/revisiones/02-motor-jev-cyber-neo.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/02-motor-jev-abogado.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/02-motor-jev-cyber-neo.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/02-motor-jev-abogado.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/02-motor-jev-cyber-neo.md",
+      "npm run typecheck",
+      "npm run lint",
+      "npm test"
+    ],
+    "checkpoint": "step-07-revision-motor-jev",
+    "files": [
+      "docs/revisiones/02-motor-jev-abogado.md",
+      "docs/revisiones/02-motor-jev-cyber-neo.md",
+      "src/motor/**",
+      "src/jev/**"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "API POST /api/diagnosticos y /aclarar con D1 y JEV",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E1-T7"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `POST /api/diagnosticos` recibe un cuerpo válido con el reto de ventas en modo mock THE SYSTEM SHALL responder 201 con un `token` de 22 caracteres base64url, `dolores_detectados` que incluye `{id: \"bloqueo_comercial\", etiqueta: \"Pocas ventas\"}` y `necesita_aclaracion` false.",
+      "WHEN el cuerpo no trae `consentimiento: true` o el `reto` tiene menos de 40 caracteres THE SYSTEM SHALL responder 400 con `error.code` `VALIDACION`.",
+      "WHEN el reto es vago (sin palabras clave del mock) THE SYSTEM SHALL responder `necesita_aclaracion` true; WHEN después llega `POST /api/diagnosticos/:token/aclarar` con dolores `[\"capital\"]` y metas `[\"levantar_capital\"]` THE SYSTEM SHALL responder 200 con `dolores_detectados` que incluye `busca_capital`.",
+      "WHEN `aclarar` se llama por segunda vez con el mismo token THE SYSTEM SHALL responder 409 con `error.code` `YA_HUBO_ACLARACION`; WHEN el token no existe THE SYSTEM SHALL responder 404 con `error.code` `NO_ENCONTRADO`.",
+      "WHEN el reto contiene `simular falla de jev` THE SYSTEM SHALL responder 502 con `error.code` `JEV_NO_DISPONIBLE` y un `token`, y guardar el lead con `estado` `error` y `jev_error` no nulo.",
+      "WHEN las pruebas terminan THE SYSTEM SHALL tener en la D1 local al menos un lead con `llamadas_jev` 2 y al menos un lead con `estado` `error` y `jev_error` no nulo."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run test:e2e -- tests/e2e/api-diagnosticos.spec.ts",
+      "npx wrangler d1 execute DB --local --json --command \"SELECT CASE WHEN count(*) >= 1 THEN 'si' ELSE 'no' END AS hay FROM leads WHERE llamadas_jev = 2\" > .wrangler/llamadas.json",
+      "grep -Eq '\"hay\": ?\"si\"' .wrangler/llamadas.json",
+      "npx wrangler d1 execute DB --local --json --command \"SELECT CASE WHEN count(*) >= 1 THEN 'si' ELSE 'no' END AS hay FROM leads WHERE estado = 'error' AND jev_error IS NOT NULL\" > .wrangler/errores.json",
+      "grep -Eq '\"hay\": ?\"si\"' .wrangler/errores.json",
+      "npm run test:e2e -- tests/e2e/salud.spec.ts"
+    ],
+    "checkpoint": "step-08-api-diagnosticos",
+    "files": [
+      "src/worker/esquemas.ts",
+      "src/worker/repositorio.ts",
+      "src/worker/diagnosticos.ts",
+      "src/worker/app.ts",
+      "tests/e2e/api-diagnosticos.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "API finalizar, asesor, resultados públicos y /r con meta OG",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `POST /api/diagnosticos/:token/finalizar` llega sin `respuestas_seguimiento` para el reto de ventas THE SYSTEM SHALL responder 200 `{pendiente: true, seguimientos}` (arreglo de preguntas) cuya primera pregunta tiene id `cliente`.",
+      "WHEN se vuelve a llamar con `respuestas_seguimiento` `{cliente: \"b2b\", reuniones: \"menos_20\"}` THE SYSTEM SHALL responder 200 con un `resultado_id` de 10 caracteres base62 distinto del token y `resultado.programa_top.id` `Sales_Machine`.",
+      "WHEN se pide `GET /api/resultados/:id` THE SYSTEM SHALL responder 200 con `nombre_pila` y sin las claves `email`, `whatsapp`, `empresa` ni `token`; WHEN el id no existe THE SYSTEM SHALL responder 404.",
+      "WHEN se pide `GET /r/:id` THE SYSTEM SHALL responder 200 en HTML con `og:title`, `og:description`, `og:image` igual a `<origen>/og/Sales_Machine.png`, `og:url` y `twitter:card` `summary_large_image`; WHEN el id no existe THE SYSTEM SHALL responder 404.",
+      "WHEN se llama `POST /api/diagnosticos/:token/asesor` THE SYSTEM SHALL responder 204 y dejar `quiere_asesor` en 1 para ese lead.",
+      "WHEN `finalizar` se llama otra vez después de completado THE SYSTEM SHALL devolver el mismo `resultado_id`; WHEN se llama sobre un lead con `estado` `error` (reto con `simular falla de jev`) THE SYSTEM SHALL responder 409 con `error.code` `JEV_NO_DISPONIBLE`."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run test:e2e -- tests/e2e/api-resultados.spec.ts",
+      "npx wrangler d1 execute DB --local --json --command \"SELECT CASE WHEN count(*) >= 1 THEN 'si' ELSE 'no' END AS hay FROM leads WHERE quiere_asesor = 1 AND resultado_id IS NOT NULL\" > .wrangler/asesor.json",
+      "grep -Eq '\"hay\": ?\"si\"' .wrangler/asesor.json",
+      "npx wrangler d1 execute DB --local --json --command \"PRAGMA table_info(resultados)\" > .wrangler/columnas.json",
+      "grep -Eq '\"name\": ?\"nombre_pila\"' .wrangler/columnas.json",
+      "grep -Eq '\"name\": ?\"(email|whatsapp|empresa)\"' .wrangler/columnas.json; test $? -eq 1",
+      "npm run test:e2e -- tests/e2e/api-diagnosticos.spec.ts"
+    ],
+    "checkpoint": "step-09-api-resultados",
+    "files": [
+      "src/worker/diagnosticos.ts",
+      "src/worker/resultados.ts",
+      "src/worker/repositorio.ts",
+      "src/worker/app.ts",
+      "tests/e2e/api-resultados.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Cabeceras de seguridad, CSP, límite y errores sin stack",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `app.request(\"/api/salud\")` corre en Vitest THE SYSTEM SHALL incluir `Content-Security-Policy` igual a la constante `CSP`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`.",
+      "WHEN `npm run test:e2e -- tests/e2e/salud.spec.ts` pide `GET /`, `GET /no-existe` y `GET /api/salud` a `wrangler dev` THE SYSTEM SHALL recibir en las tres la cabecera `content-security-policy` con exactamente la misma cadena, tomada de `public/_headers` en las dos primeras y de la constante `CSP` en la tercera.",
+      "WHEN el binding `LIMITE_DIAGNOSTICO` responde `{success: false}` y `LIMITE_ACTIVO` es `1` THE SYSTEM SHALL responder a `POST /api/diagnosticos` con 429, `error.code` `LIMITE_EXCEDIDO` y el mensaje `Recibimos muchas solicitudes desde tu conexión. Espera un minuto y vuelve a intentarlo.`, sin llamar a JEV ni a D1.",
+      "WHEN `LIMITE_ACTIVO` es `0` THE SYSTEM SHALL no consultar el binding `LIMITE_DIAGNOSTICO`.",
+      "WHEN un handler lanza una excepción (env de prueba sin `DB`) THE SYSTEM SHALL responder 500 con `error.code` `ERROR_INTERNO` y sin `TypeError`, `Error:` ni líneas que empiecen con `at ` en el cuerpo.",
+      "WHEN `compararSeguro` compara cadenas iguales, distintas del mismo largo y de distinto largo THE SYSTEM SHALL devolver true, false y false."
+    ],
+    "verify": [
+      "npm test -- tests/worker/seguridad.test.ts",
+      "npm test",
+      "npm run typecheck",
+      "npm run lint",
+      "npm run test:e2e -- tests/e2e/salud.spec.ts",
+      "npm run test:e2e -- tests/e2e/api-diagnosticos.spec.ts",
+      "npm run test:e2e -- tests/e2e/api-resultados.spec.ts"
+    ],
+    "checkpoint": "step-10-api-seguridad",
+    "files": [
+      "src/worker/seguridad.ts",
+      "src/worker/app.ts",
+      "public/_headers",
+      "tests/worker/seguridad.test.ts",
+      "tests/e2e/salud.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Revisión del bloque API (compuerta)",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/03-api-abogado.md` con la línea `Herramienta: anthropic-skills:abogado-del-diablo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/03-api-cyber-neo.md` con la línea `Herramienta: cyber-neo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN se lee cada documento THE SYSTEM SHALL contener la tabla de hallazgos con la cabecera `| # | Severidad | Hallazgo | Estado | Corrección |`.",
+      "WHEN `npm run typecheck`, `npm run lint`, `npm test` y `npm run test:e2e` corren después de las correcciones THE SYSTEM SHALL salir con 0, con 0 pruebas fallidas."
+    ],
+    "verify": [
+      "test -f docs/revisiones/03-api-abogado.md",
+      "test -f docs/revisiones/03-api-cyber-neo.md",
+      "grep -Eq '^Herramienta: (anthropic-skills:abogado-del-diablo|revisión manual \\(skill no disponible\\))$' docs/revisiones/03-api-abogado.md",
+      "grep -Eq '^Herramienta: (cyber-neo|revisión manual \\(skill no disponible\\))$' docs/revisiones/03-api-cyber-neo.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/03-api-abogado.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/03-api-cyber-neo.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/03-api-abogado.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/03-api-cyber-neo.md",
+      "npm run typecheck",
+      "npm run lint",
+      "npm test",
+      "npm run test:e2e"
+    ],
+    "checkpoint": "step-11-revision-api",
+    "files": [
+      "docs/revisiones/03-api-abogado.md",
+      "docs/revisiones/03-api-cyber-neo.md",
+      "src/worker/**",
+      "migrations/**"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Interfaz: tokens, contacto y pasos 1 a 3 con el medidor",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN la persona pulsa `Empezar` con nombre, correo o WhatsApp vacíos o sin marcar el consentimiento THE SYSTEM SHALL mostrar un error en texto junto a cada campo faltante y no enviar ninguna petición a `/api/`.",
+      "WHEN el paso 0 es válido THE SYSTEM SHALL mostrar `¿Cuál es tu punto de partida?` con las 5 opciones `Fundador/a`, `Ejecutivo/a`, `Represento una empresa`, `Tengo un hijo/a adolescente (13-18)` e `Independiente / consultor`, y un `progressbar` con `aria-valuenow` 1.",
+      "WHEN se elige `Tengo un hijo/a adolescente (13-18)` THE SYSTEM SHALL pedir `Edad de tu hijo/a` (número de 10 a 25) en lugar de la etapa; WHEN se elige otro perfil THE SYSTEM SHALL mostrar las 5 etapas.",
+      "WHEN el reto tiene menos de 40 caracteres THE SYSTEM SHALL mantener deshabilitado `Analizar mi reto` y mostrar el contador con el formato `n/1200`; WHEN se toca un ejemplo THE SYSTEM SHALL copiar su texto al campo.",
+      "WHEN se envía el reto THE SYSTEM SHALL hacer exactamente 1 `POST /api/diagnosticos`; WHEN la API responde 502 (reto con `simular falla de jev`) THE SYSTEM SHALL mostrar `Tuvimos un problema al analizar tu reto` y el botón `Habla con un asesor de 30X`.",
+      "WHEN se navega con Tab THE SYSTEM SHALL dar al control enfocado un `outline-style` distinto de `none` y un `outline-width` de al menos 2px, y el pie `Prototipo para el Hackatón 30X · no oficial · código abierto en GitHub` SHALL estar visible."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run build",
+      "npm run test:e2e -- tests/e2e/inicio.spec.ts",
+      "npm run test:e2e -- tests/e2e/salud.spec.ts"
+    ],
+    "checkpoint": "step-12-ui-inicio",
+    "files": [
+      "src/web/estilos.css",
+      "src/web/comun.ts",
+      "src/web/diagnostico.ts",
+      "index.html",
+      "tests/e2e/inicio.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Interfaz: chips, aclaración y seguimientos (pasos 4 y 5)",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN se envía el reto de ventas THE SYSTEM SHALL mostrar `Esto entendí de tu reto` con los chips `Pocas ventas` y `Vendes solo por referidos`, cada uno con su botón de quitar, y `+ agregar` SHALL listar los otros 8 dolores.",
+      "WHEN se pulsa `Confirmar` THE SYSTEM SHALL llamar a `finalizar` sin respuestas de seguimiento y mostrar `¿Le vendes a empresas o a personas?`; WHEN se elige `A empresas` THE SYSTEM SHALL mostrar `¿Cuántas reuniones de venta tienes por semana?`.",
+      "WHEN se envía el reto vago THE SYSTEM SHALL mostrar `Ayúdanos a entenderte mejor` con los 6 botones de dolor y los 5 de meta como interruptores con `aria-pressed`.",
+      "WHEN la persona elige `Necesito inversión` y `Levantar capital` y continúa THE SYSTEM SHALL hacer exactamente 1 `POST` a `/aclarar` y ningún segundo `POST /api/diagnosticos`.",
+      "WHEN terminan los seguimientos THE SYSTEM SHALL navegar a `/r/<resultado_id>` con un id de 10 caracteres y guardar el token en `sessionStorage` bajo la clave `diag:<resultado_id>`."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run build",
+      "npm run test:e2e -- tests/e2e/confirmacion.spec.ts",
+      "npm run test:e2e -- tests/e2e/inicio.spec.ts"
+    ],
+    "checkpoint": "step-13-ui-confirmacion",
+    "files": [
+      "src/web/confirmacion.ts",
+      "src/web/diagnostico.ts",
+      "tests/e2e/confirmacion.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T7",
+    "title": "Interfaz: tarjeta de resultado, escala, asesor y compartir",
+    "epic": "02-api-interfaz",
+    "dependencies": [
+      "E2-T6"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN termina el flujo de ventas con `A empresas` y `Menos de 20` THE SYSTEM SHALL mostrar `Alonso, tu programa es Sales Machine`, un círculo con `85%`, la etiqueta `Muy recomendado` y bajo `Te lo recomendamos porque mencionaste:` los chips confirmados.",
+      "WHEN hay otros programas con fit de 0.40 o más THE SYSTEM SHALL listarlos en la escala de mayor a menor con nombre, %, barra y, si no cumplen el requisito, `tu reto coincide, pero aún no cumples: <condición>`; y SHALL mostrar una barra por cada una de las 6 familias.",
+      "WHEN se muestra `Conocer Sales Machine` THE SYSTEM SHALL enlazar a `https://30x.com/programas/sales-machine`; WHEN se pulsa `Habla con un asesor de 30X` THE SYSTEM SHALL hacer `POST /api/diagnosticos/<token>/asesor`, recibir 204 y mostrar `Listo, un asesor te contactará`.",
+      "WHEN se generan los enlaces de compartir THE SYSTEM SHALL usar `https://www.linkedin.com/sharing/share-offsite/?url=`, `https://twitter.com/intent/tweet?text=` con `url`, `https://wa.me/?text=` sin número y `Copiar enlace` con `<origen>/r/<id>`; WHEN se pulsa `Descargar imagen` THE SYSTEM SHALL disparar una descarga cuyo nombre termina en `.png`.",
+      "WHEN un perfil `corporativo` con etapa `consolidada` envía `Somos una empresa de logística y queremos vender más a clientes nuevos con un proceso claro este año.` THE SYSTEM SHALL mostrar `Tu ruta preliminar: Sales Machine`, la leyenda `Un asesor de 30X confirma tu ruta`, el botón de asesor como principal y ninguna aparición de la palabra `revisión`.",
+      "WHEN el mismo `/r/<id>` se abre en un contexto nuevo sin `sessionStorage` THE SYSTEM SHALL mostrar el nombre de pila y el programa, ocultar el botón de asesor y no contener el correo de la persona."
+    ],
+    "verify": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm run build",
+      "npm run test:e2e -- tests/e2e/resultado.spec.ts",
+      "npm run test:e2e -- tests/e2e/confirmacion.spec.ts",
+      "npm run test:e2e -- tests/e2e/api-resultados.spec.ts"
+    ],
+    "checkpoint": "step-14-ui-resultado",
+    "files": [
+      "src/web/resultado-vista.ts",
+      "src/web/compartir.ts",
+      "src/web/resultado.ts",
+      "resultado.html",
+      "tests/e2e/resultado.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Imágenes OG por programa generadas con Playwright",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `npm run og` corre THE SYSTEM SHALL escribir `public/og/<id>.png` para cada uno de los 17 programas de `src/motor/catalogo.ts` más `public/og/default.png`, y salir con 0.",
+      "WHEN `npm test -- tests/og/og.test.ts` lee la cabecera IHDR de cada PNG THE SYSTEM SHALL encontrar ancho 1200 y alto 630.",
+      "WHEN se mide cada PNG THE SYSTEM SHALL pesar menos de 300 KB.",
+      "WHEN `npm run build` corre THE SYSTEM SHALL copiar `public/og/Sales_Machine.png` y `public/og/default.png` a `dist/og/`.",
+      "WHEN `npm test -- tests/seguridad/secretos.test.ts` corre THE SYSTEM SHALL seguir en cero coincidencias (los PNG se saltan como binarios)."
+    ],
+    "verify": [
+      "npm run og",
+      "npm test -- tests/og/og.test.ts",
+      "npm run build",
+      "test -f dist/og/Sales_Machine.png",
+      "test -f dist/og/default.png",
+      "npm test -- tests/seguridad/secretos.test.ts",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-15-og",
+    "files": [
+      "scripts/og.ts",
+      "scripts/og-plantilla.html",
+      "public/og/*.png",
+      "tests/og/og.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Revisión del bloque interfaz (compuerta)",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E2-T7",
+      "E3-T1"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/04-interfaz-abogado.md` con la línea `Herramienta: anthropic-skills:abogado-del-diablo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/04-interfaz-cyber-neo.md` con la línea `Herramienta: cyber-neo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN se lee cada documento THE SYSTEM SHALL contener la tabla de hallazgos con la cabecera `| # | Severidad | Hallazgo | Estado | Corrección |`.",
+      "WHEN `npm run typecheck`, `npm run lint`, `npm test` y `npm run test:e2e` corren después de las correcciones THE SYSTEM SHALL salir con 0, con 0 pruebas fallidas."
+    ],
+    "verify": [
+      "test -f docs/revisiones/04-interfaz-abogado.md",
+      "test -f docs/revisiones/04-interfaz-cyber-neo.md",
+      "grep -Eq '^Herramienta: (anthropic-skills:abogado-del-diablo|revisión manual \\(skill no disponible\\))$' docs/revisiones/04-interfaz-abogado.md",
+      "grep -Eq '^Herramienta: (cyber-neo|revisión manual \\(skill no disponible\\))$' docs/revisiones/04-interfaz-cyber-neo.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/04-interfaz-abogado.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/04-interfaz-cyber-neo.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/04-interfaz-abogado.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/04-interfaz-cyber-neo.md",
+      "npm run typecheck",
+      "npm run lint",
+      "npm test",
+      "npm run test:e2e"
+    ],
+    "checkpoint": "step-16-revision-interfaz",
+    "files": [
+      "docs/revisiones/04-interfaz-abogado.md",
+      "docs/revisiones/04-interfaz-cyber-neo.md",
+      "src/web/**",
+      "*.html"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "QA: evaluación por lotes de los 60 casos y API /api/qa",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E3-T2"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `POST /api/qa/lote` llega sin `Authorization: Bearer` válido THE SYSTEM SHALL responder 401 con `error.code` `NO_AUTORIZADO` y no crear filas en `qa_runs`.",
+      "WHEN se envía el lote 0 con el token válido THE SYSTEM SHALL crear un run `en_curso` y procesar los primeros 10 casos de `casos_prueba`, devolviendo `run_id`, `procesados` 10 y `lotes_total` igual a ceil(casos / 10) (hoy 6).",
+      "WHEN se envían los lotes restantes de ese `run_id` y luego `POST /api/qa/:run_id/cerrar` THE SYSTEM SHALL guardar `total` igual al número de casos (hoy 60), `estado` `cerrado`, `aciertos_top1`, `aciertos_top3`, `latencia_p50`, `latencia_p95` y `costo_total`.",
+      "WHEN se pide `GET /api/qa/ultima` sin token THE SYSTEM SHALL responder 200 con el último run cerrado, cuyo `detalle` trae por caso `id`, `tipo`, `esperado`, `top1`, `top3`, `acierto_top1`, `acierto_top3`, `confianza_choice`, `latencia_ms` y `costo_usd`.",
+      "WHEN `evaluarCaso` puntúa un caso cuyo esperado es `requiere_revision` o `no_aplica` THE SYSTEM SHALL contar acierto si el resultado trae `requiere_revision` true; y los casos sin `esperado.programa_recomendado` SHALL quedar fuera de `evaluables` (hoy 54).",
+      "WHEN el mismo lote se envía dos veces para un run THE SYSTEM SHALL no duplicar sus casos en `detalle`."
+    ],
+    "verify": [
+      "npm test -- tests/qa/evaluar.test.ts",
+      "npm run test:e2e -- tests/e2e/api-qa.spec.ts",
+      "npx wrangler d1 execute DB --local --json --command \"SELECT CASE WHEN count(*) >= 1 THEN 'si' ELSE 'no' END AS hay FROM qa_runs WHERE estado = 'cerrado'\" > .wrangler/qa.json",
+      "grep -Eq '\"hay\": ?\"si\"' .wrangler/qa.json",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-17-qa-api",
+    "files": [
+      "src/qa/evaluar.ts",
+      "src/worker/qa.ts",
+      "src/worker/app.ts",
+      "tests/qa/evaluar.test.ts",
+      "tests/e2e/api-qa.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Página /qa.html y script de calibración de umbrales",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E3-T3"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `/qa.html` carga después de un run cerrado THE SYSTEM SHALL mostrar una fila por caso, los totales, p50 y p95 de latencia, costo total, modelo, modo, umbrales y el texto `hoy en 30X el programa lo elige la persona en 2,325 de 2,325 caminos; la etapa nunca cambia el resultado`.",
+      "WHEN se pulsa `Correr de nuevo` con el token `token-e2e-local` THE SYSTEM SHALL enviar `Authorization: Bearer` en cada petición de lote, procesar todos los lotes, cerrar el run y refrescar la tabla, dejando `localStorage` vacío.",
+      "WHEN se usa un token equivocado THE SYSTEM SHALL mostrar `Token inválido` y no cambiar la tabla.",
+      "WHEN la página muestra la meta THE SYSTEM SHALL decir `Meta de calibración: ≥ 90 % top-1 y 100 % top-3 sobre los casos evaluables` junto a los aciertos como `n/evaluables`.",
+      "WHEN `npm test -- tests/scripts/calibrar.test.ts` corre THE SYSTEM SHALL elegir umbrales usando solo los casos cuyo id no empieza con `parafrasis-` y reportar la precisión de validación sobre los que sí empiezan con `parafrasis-`.",
+      "WHEN `node --experimental-strip-types scripts/calibrar.ts .wrangler/qa-export-minimo.json` corre (el archivo lo deja `tests/scripts/calibrar.test.ts`) THE SYSTEM SHALL salir con 0, imprimir la tabla de las 10 mejores combinaciones y no escribir ningún archivo; WHEN corre con `--escribir --salida <archivo temporal>` THE SYSTEM SHALL escribir ahí los umbrales elegidos con las 6 claves."
+    ],
+    "verify": [
+      "npm test -- tests/scripts/calibrar.test.ts",
+      "node --experimental-strip-types scripts/calibrar.ts .wrangler/qa-export-minimo.json",
+      "npm run build",
+      "npm run test:e2e -- tests/e2e/qa-pagina.spec.ts",
+      "npm run test:e2e -- tests/e2e/api-qa.spec.ts",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-18-qa-pagina-calibrar",
+    "files": [
+      "qa.html",
+      "src/web/qa.ts",
+      "tests/e2e/qa-pagina.spec.ts",
+      "scripts/calibrar.ts",
+      "tests/scripts/calibrar.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "Aviso de privacidad, script de JEV en vivo y README",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E3-T4"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `/privacidad.html` carga THE SYSTEM SHALL decir qué se guarda (nombre, correo, WhatsApp, empresa, reto y resultado), para qué, que es un prototipo no oficial del Hackatón 30X y `escríbenos desde el repositorio de GitHub (issues)` con enlace a `https://github.com/avg031396-sys/diagnostico-30x-jev/issues`, y SHALL no contener ninguna dirección de correo.",
+      "WHEN `JEV_MODE=mock node --experimental-strip-types scripts/jev-en-vivo.ts` corre THE SYSTEM SHALL salir con código 2 e imprimir `JEV_MODE debe ser composio-proxy` sin ninguna llamada de red.",
+      "WHEN `npm test -- tests/scripts/jev-en-vivo.test.ts` ejecuta `ejecutar()` con `JEV_MODE` `composio-proxy`, claves ficticias y un `fetch` inyectado THE SYSTEM SHALL hacer exactamente 1 petición e imprimir programa, confianza, latencia y costo; WHEN faltan las claves de Composio THE SYSTEM SHALL devolver código 3 sin llamar a `fetch`.",
+      "WHEN se lee `README.md` THE SYSTEM SHALL contener los títulos `## Qué es`, `## Demo`, `## Correr local en modo mock`, `## Conectar JEV` y `## Resultados de /qa`, y el texto `prototipo no oficial`.",
+      "WHEN `npm test` corre completo THE SYSTEM SHALL salir con 0, incluido el escaneo de secretos sobre los archivos nuevos."
+    ],
+    "verify": [
+      "npm run test:e2e -- tests/e2e/privacidad.spec.ts",
+      "JEV_MODE=mock node --experimental-strip-types scripts/jev-en-vivo.ts; test $? -eq 2",
+      "npm test -- tests/scripts/jev-en-vivo.test.ts",
+      "grep -qx '## Qué es' README.md",
+      "grep -qx '## Demo' README.md",
+      "grep -qx '## Correr local en modo mock' README.md",
+      "grep -qx '## Conectar JEV' README.md",
+      "grep -qx '## Resultados de /qa' README.md",
+      "grep -q 'prototipo no oficial' README.md",
+      "npm test",
+      "npm run typecheck",
+      "npm run lint"
+    ],
+    "checkpoint": "step-19-entrega",
+    "files": [
+      "privacidad.html",
+      "scripts/jev-en-vivo.ts",
+      "tests/scripts/jev-en-vivo.test.ts",
+      "README.md",
+      "tests/e2e/privacidad.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T6",
+    "title": "Revisión final de QA y entrega (compuerta global)",
+    "epic": "03-og-qa-entrega",
+    "dependencies": [
+      "E3-T5"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/05-qa-y-entrega-abogado.md` con la línea `Herramienta: anthropic-skills:abogado-del-diablo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN el paso termina THE SYSTEM SHALL tener `docs/revisiones/05-qa-y-entrega-cyber-neo.md` con la línea `Herramienta: cyber-neo` (o `Herramienta: revisión manual (skill no disponible)`) y la línea exacta `Hallazgos críticos abiertos: 0`.",
+      "WHEN se lee cada documento THE SYSTEM SHALL contener la tabla de hallazgos con la cabecera `| # | Severidad | Hallazgo | Estado | Corrección |`.",
+      "WHEN corre la compuerta automática completa (`npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build`, `npm run deploy:prueba`) THE SYSTEM SHALL salir con 0 en cada comando."
+    ],
+    "verify": [
+      "test -f docs/revisiones/05-qa-y-entrega-abogado.md",
+      "test -f docs/revisiones/05-qa-y-entrega-cyber-neo.md",
+      "grep -Eq '^Herramienta: (anthropic-skills:abogado-del-diablo|revisión manual \\(skill no disponible\\))$' docs/revisiones/05-qa-y-entrega-abogado.md",
+      "grep -Eq '^Herramienta: (cyber-neo|revisión manual \\(skill no disponible\\))$' docs/revisiones/05-qa-y-entrega-cyber-neo.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/05-qa-y-entrega-abogado.md",
+      "grep -qF '| # | Severidad | Hallazgo | Estado | Corrección |' docs/revisiones/05-qa-y-entrega-cyber-neo.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/05-qa-y-entrega-abogado.md",
+      "grep -qx 'Hallazgos críticos abiertos: 0' docs/revisiones/05-qa-y-entrega-cyber-neo.md",
+      "npm run typecheck",
+      "npm run lint",
+      "npm test",
+      "npm run test:e2e",
+      "npm run build",
+      "npm run deploy:prueba"
+    ],
+    "checkpoint": "step-20-revision-final",
+    "files": [
+      "docs/revisiones/05-qa-y-entrega-abogado.md",
+      "docs/revisiones/05-qa-y-entrega-cyber-neo.md",
+      "src/**",
+      "scripts/**"
+    ],
+    "status": "pending"
+  }
+]

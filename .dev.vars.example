@@ -1,0 +1,9 @@
+# Copia este archivo a .dev.vars (está en .gitignore). Valores ficticios: nunca pongas claves reales aquí.
+# Deja JEV_MODE=mock. Para la única prueba en vivo usa: JEV_MODE=composio-proxy npm run jev:vivo
+JEV_MODE=mock
+QA_TOKEN=token-e2e-local
+COMPOSIO_API_KEY=pon-aqui-tu-clave-de-composio
+COMPOSIO_OPENROUTER_ACCOUNT_ID=pon-aqui-el-connected-account-id-de-openrouter
+COMPOSIO_JEV_ACCOUNT_ID=
+# Solo para el respaldo composio-jev (si falta, usa JEV_MODEL = typesafe/jev-1.14):
+JEV_MODEL_COMPOSIO=

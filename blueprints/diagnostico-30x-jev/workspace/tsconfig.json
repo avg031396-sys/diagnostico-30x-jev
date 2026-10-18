@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "lib": ["ES2024"],
+    "types": [],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "worker-configuration.d.ts",
+    "src/worker/**/*.ts",
+    "src/motor/**/*.ts",
+    "src/jev/**/*.ts",
+    "src/qa/**/*.ts",
+    "tests/worker/**/*.ts",
+    "tests/motor/**/*.ts",
+    "tests/jev/**/*.ts",
+    "tests/qa/**/*.ts"
+  ],
+  "exclude": ["blueprints", "dist", ".wrangler", "node_modules"]
+}

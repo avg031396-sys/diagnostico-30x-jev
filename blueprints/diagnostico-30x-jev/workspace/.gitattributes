@@ -1,0 +1,4 @@
+# LF en todo el repo: Biome exige LF y Git en Windows convierte a CRLF sin esta línea.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
