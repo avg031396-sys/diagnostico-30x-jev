@@ -18,6 +18,7 @@ de TypeSafe, respuestas tipadas noul/choice/score) decide el programa de 30X má
 | Imágenes OG | `npm run og` (Playwright; se comitean los PNG de `public/og/`) |
 | Calibrar | `npm run calibrar -- <export-de-qa.json>` · escribir umbrales: agrega `--escribir` (motor en `src/qa/calibrar.ts`) |
 | Prueba de despliegue | `npm run deploy:prueba` (`wrangler deploy --dry-run`, no toca la cuenta) |
+| Línea base LLM | `npm run comparar-llm -- --modelo <id>` — gasta saldo; solo Alonso |
 | Llamada real a JEV | `JEV_MODE=openrouter npm run jev:vivo` (o `composio-proxy`) — solo Alonso, gasta saldo; el constructor no la corre |
 
 **Compuerta:** `npm run typecheck && npm run lint && npm test` antes de marcar cualquier tarea.
@@ -66,7 +67,7 @@ decide (ranking, requisitos, control con Choice, seguimientos) → fila en `resu
 | Programas, familias, dolores, URLs | `src/motor/catalogo.ts` (prueba que coincide con los insumos) |
 | Banco de seguimientos | `src/data/seguimientos.json` |
 | Esquema D1 | `migrations/0001_inicial.sql` — escrito a mano, no se edita tras comitearlo |
-| Acceso a D1 | `src/worker/repositorio.ts` (leads, resultados) y `src/worker/qa.ts` (qa_runs) |
+| Acceso a D1 | `src/worker/repositorio.ts` (leads, resultados), `src/worker/qa.ts` (qa_runs) y `src/worker/borrado.ts` (solo borrar) |
 | CSP y cabeceras | constante `CSP` en `src/worker/seguridad.ts`, copiada en `public/_headers` |
 | Tokens de diseño | `src/web/estilos.css` |
 | Palabras clave del mock | `src/jev/mock-keywords.ts` |
@@ -113,6 +114,7 @@ decide (ranking, requisitos, control con Choice, seguimientos) → fila en `resu
 | `JEV_MODEL` | sí (default `typesafe/jev-1.14`) | adaptadores JEV | `wrangler.jsonc` vars |
 | `LIMITE_ACTIVO` | sí (default `1`) | `src/worker/seguridad.ts` | `wrangler.jsonc` vars; e2e pasa `0` |
 | `QA_TOKEN` | solo para `/api/qa/lote` y `cerrar` | `src/worker/qa.ts` | `.dev.vars` (local `token-e2e-local`); producción: secret |
+| `LEADS_TOKEN` | solo para `/api/leads` (vista de ventas) | `src/worker/leads.ts` | `.dev.vars` (local `token-leads-local`); producción: secret |
 | `OPENROUTER_API_KEY` | solo con `JEV_MODE=openrouter` | `src/jev/openrouter.ts` | OpenRouter; producción: secret |
 | `COMPOSIO_API_KEY` | solo con `JEV_MODE=composio-*` | `proxy.ts`, `composio-jev.ts` | Composio, permiso "Proxy execute" |
 | `COMPOSIO_OPENROUTER_ACCOUNT_ID` | solo con `composio-proxy` | `proxy.ts` | Composio, conexión OpenRouter |

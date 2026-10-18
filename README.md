@@ -77,12 +77,35 @@ guardadas en una corrida (`/api/qa/ultima`), con una rejilla de `umbral_recomend
 `src/data/umbrales.json`.
 
 Con la corrida anterior, bajar `umbral_mostrar` de 0.40 a 0.35 sube la calibración de 18/24 a
-19/24 en top-1 y deja igual la validación (28/30). En total: **47/54 en top-1 (87 %)**. Ese valor
-ya está aplicado.
+19/24 en top-1 y deja igual la validación (28/30). Ese valor ya está aplicado.
 
-## Ver los leads (solo la persona dueña de la cuenta)
+### Regla de la Inmersión Ejecutiva
 
-Los leads se guardan en la tabla `leads` de D1 y ninguna ruta pública los expone. Para verlos hay que tener sesión de Cloudflare en la cuenta dueña (`npx wrangler login`):
+Los 3 fallos de Inmersión eran el mismo patrón: founder que factura USD 1M o más, con «todo
+depende de mí» o «quiero expandirme» por encima de 0.8, enviado a Operaciones con AI o Advanced
+Strategy. La regla (`src/motor/reglas.ts`) aplica el criterio que Andrés dice en voz alta
+(«milloncitos de dólares para arriba») solo cuando la facturación fue respondida. Con las mismas
+respuestas de JEV: **49/54 en top-1 (91 %)**, sin perder ningún acierto.
+
+**Cómo leer estas cifras.** Los casos y sus respuestas esperadas los escribió el mismo equipo que
+diseñó las preguntas y las reglas, y la regla de la Inmersión se diseñó mirando los fallos. Las
+paráfrasis de validación salen de los mismos casos. Es una prueba de consistencia, no una medición
+independiente: la medición real necesita retos reales etiquetados por 30X.
+
+### Línea base contra un LLM genérico
+
+`npm run comparar-llm -- --modelo <id-de-openrouter>` manda los mismos casos, con la misma
+información que recibe JEV, a un LLM de chat por OpenRouter y reporta aciertos, latencia y costo
+(gasta saldo: una llamada por caso; detalle en `.wrangler/comparacion-llm.json`).
+
+## Ver los leads
+
+**Para el equipo comercial:** [`/leads.html`](/leads.html) lista los últimos 200 leads calificados
+(caliente: pidió asesor o su n.º 1 es Inmersión, Multipliers o Planes Corporativos; tibio:
+recomendación completa; frío: el resto). Pide el secreto `LEADS_TOKEN`
+(`npx wrangler secret put LEADS_TOKEN`, 32 caracteres o más); sin él, la ruta responde 401 siempre.
+
+**Desde la terminal** (sesión de Cloudflare en la cuenta dueña, `npx wrangler login`):
 
 - `npm run leads`: últimos 200 en una tabla.
 - `npm run leads:exportar`: todos a `.wrangler/leads.json` (carpeta ignorada por git).
@@ -93,7 +116,9 @@ Las revisiones de seguridad y de puntos ciegos se hicieron en una sola pasada al
 
 ## Privacidad y seguridad
 
-- El aviso está en [`/privacidad.html`](/privacidad.html).
+- El aviso está en [`/privacidad.html`](/privacidad.html). Ahí mismo la persona borra sus datos con
+  su correo y su WhatsApp (los dos deben coincidir; la respuesta es igual exista o no el lead).
+- Un cron diario (`0 7 * * *`) borra los leads con más de 90 días y las tarjetas sin lead.
 - Cabeceras CSP estrictas, validación con zod en toda entrada, límite de peticiones por IP y errores sin stack.
 - Nunca se llama a ningún webhook ni número de WhatsApp de 30X; compartir usa `wa.me/?text=` sin número.
 

@@ -9,8 +9,11 @@ paths:
 
 # Worker y datos
 
-- D1 solo desde `src/worker/repositorio.ts` (`leads`, `resultados`) y `src/worker/qa.ts` (`qa_runs`).
+- D1 solo desde `src/worker/repositorio.ts` (`leads`, `resultados`), `src/worker/qa.ts` (`qa_runs`)
+  y `src/worker/borrado.ts` (solo `DELETE`: borrado a pedido y purga diaria de 90 días).
   Siempre `prepare(...).bind(...)`. Nunca SQL armado con concatenación de texto.
+- `/api/leads` es la única ruta que devuelve datos de contacto: exige `LEADS_TOKEN` con
+  `compararSeguro()`, responde `Cache-Control: no-store` y pasa por el límite de peticiones.
 - Toda ruta valida su entrada con zod (`src/worker/esquemas.ts`) antes de tocar lógica.
 - Respuesta de error única: `{ "error": { "code": "...", "message": "..." } }`. Códigos:
   `VALIDACION` 400, `NO_AUTORIZADO` 401, `NO_ENCONTRADO` 404, `YA_HUBO_ACLARACION` 409,
