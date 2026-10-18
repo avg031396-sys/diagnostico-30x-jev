@@ -64,7 +64,9 @@ export const finalizar = z.object({
     .record(z.string(), z.string())
     .refine((r) =>
       Object.entries(r).every(([pregunta, valor]) =>
-        PREGUNTAS.some((p) => p.id === pregunta && p.opciones.some((o) => o.id === valor)),
+        pregunta === "prioridad"
+          ? FAMILIAS.some((f) => f.id === valor)
+          : PREGUNTAS.some((p) => p.id === pregunta && p.opciones.some((o) => o.id === valor)),
       ),
     )
     .optional(),

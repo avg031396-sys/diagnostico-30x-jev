@@ -21,7 +21,9 @@
     "calibrar": "node --experimental-strip-types scripts/calibrar.ts",
     "jev:vivo": "node --experimental-strip-types scripts/jev-en-vivo.ts",
     "deploy:prueba": "wrangler deploy --dry-run",
-    "deploy": "vite build && wrangler deploy"
+    "deploy": "vite build && wrangler deploy",
+    "leads": "wrangler d1 execute DB --remote --command \"SELECT created_at, nombre, email, whatsapp, empresa, perfil, etapa, estado, programa_top, quiere_asesor FROM leads ORDER BY created_at DESC LIMIT 200\"",
+    "leads:exportar": "wrangler d1 execute DB --remote --json --command \"SELECT * FROM leads ORDER BY created_at DESC\" > .wrangler/leads.json"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",

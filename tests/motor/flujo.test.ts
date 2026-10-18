@@ -207,3 +207,45 @@ describe("rutas casi igual de fuertes", () => {
     }
   });
 });
+
+describe("empate entre familias distintas", () => {
+  const noul = noulBase({
+    bloqueo_comercial: 0.85,
+    dolor_growth: 0.85,
+    fit_sales_machine: 0.85,
+    fit_growth_rockstar: 0.85,
+  });
+  const base = {
+    respuestas: { noul, choice: { valor: "Sales_Machine", confianza: 0.8 }, score: null },
+    dolores_confirmados: ["bloqueo_comercial", "dolor_growth"] as const,
+  };
+
+  it("pregunta qué es lo más urgente con una opción por familia empatada", () => {
+    const salida = resolverResultado(
+      entrada({ ...base, dolores_confirmados: [...base.dolores_confirmados] }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(true);
+    if (salida.pendiente) {
+      const p = salida.seguimientos[0];
+      expect(p?.id).toBe("prioridad");
+      expect(p?.opciones.map((o) => o.id)).toEqual(["ventas", "growth"]);
+      expect(salida.seguimientos.length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it("si elige growth, Growth Rockstar queda primero", () => {
+    const salida = resolverResultado(
+      entrada({
+        ...base,
+        dolores_confirmados: [...base.dolores_confirmados],
+        respuestas_seguimiento: { prioridad: "growth" },
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      expect(salida.resultado.programa_top?.id).toBe("Growth_Rockstar");
+    }
+  });
+});

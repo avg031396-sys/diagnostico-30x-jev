@@ -1,6 +1,6 @@
 import seguimientos from "../data/seguimientos.json" with { type: "json" };
 import type { IdFamilia, IdPrograma } from "./catalogo.ts";
-import { FAMILIAS, programaPorId } from "./catalogo.ts";
+import { DOLORES_ACLARACION, FAMILIAS, programaPorId } from "./catalogo.ts";
 import type {
   BloqueSeguimiento,
   Facturacion,
@@ -52,6 +52,34 @@ function maxFitDeFamilia(visibles: FilaRanking[], familia: IdFamilia): number {
     0,
     ...visibles.filter((f) => programas.some((p) => p === f.programa)).map((f) => f.fit),
   );
+}
+
+// Empate entre programas de familias distintas: ninguna pregunta de bloque los separa,
+// así que se pregunta qué es lo más urgente. Solo cuenta lo que cumple su requisito.
+export function preguntaPrioridad(vis: FilaRanking[], delta: number): PreguntaSeguimiento | null {
+  const elegibles = vis.filter((f) => f.cumple);
+  const n1 = elegibles[0];
+  if (!n1) {
+    return null;
+  }
+  const familias: IdFamilia[] = [];
+  for (const f of elegibles) {
+    const familia = (programaPorId(f.programa).familias as readonly IdFamilia[])[0];
+    if (n1.fit - f.fit < delta && familia && !familias.includes(familia)) {
+      familias.push(familia);
+    }
+  }
+  if (familias.length < 2) {
+    return null;
+  }
+  return {
+    id: "prioridad",
+    texto: "Si solo pudieras resolver una cosa este año, ¿cuál sería?",
+    opciones: familias.slice(0, 4).map((id) => ({
+      id,
+      etiqueta: DOLORES_ACLARACION.find((d) => d.familia === id)?.etiqueta ?? id,
+    })),
+  };
 }
 
 export function elegirSeguimientos(entrada: EntradaSeguimientos): PreguntaSeguimiento[] {
@@ -109,6 +137,11 @@ export function elegirSeguimientos(entrada: EntradaSeguimientos): PreguntaSeguim
 
   const salida: PreguntaSeguimiento[] = [];
   let total = 0;
+  const prioridad = preguntaPrioridad(vis, umbrales.delta_hermanos);
+  if (prioridad) {
+    salida.push(prioridad);
+    total = 1;
+  }
   for (const bloque of ordenados) {
     if (total + contar(bloque) <= 2) {
       salida.push(...bloque.preguntas);
@@ -141,6 +174,11 @@ export function efectosDeSeguimiento(
     prioridades[id] = (prioridades[id] ?? 0) + n;
   };
 
+  // La familia elegida como más urgente sube completa (dentro de ella manda el fit).
+  const urgente = FAMILIAS.find((f) => f.id === respuestas.prioridad);
+  for (const id of urgente?.programas ?? []) {
+    sumar(id, 1);
+  }
   if (respuestas.formato === "presencial") {
     sumar("Inmersion_Ejecutiva", 1);
   } else if (respuestas.formato === "online") {
