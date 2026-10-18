@@ -99,7 +99,7 @@ export function dolorDetectadoDe(respuestas: RespuestasJev): DolorDetectado[] {
 export function resultadoPublico(fila: FilaResultado) {
   const detalle = JSON.parse(fila.detalle) as Pick<
     ResultadoMotor,
-    "programa_top" | "ranking" | "familias" | "chips"
+    "programa_top" | "ranking" | "familias" | "chips" | "cercanos" | "motivo_top"
   >;
   return {
     tipo: fila.tipo,
@@ -108,5 +108,7 @@ export function resultadoPublico(fila: FilaResultado) {
     ranking: detalle.ranking,
     familias: detalle.familias,
     chips: detalle.chips,
+    cercanos: detalle.cercanos ?? [],
+    motivo_top: detalle.motivo_top ?? "",
   };
 }

@@ -45,6 +45,9 @@ export type ResultadoMotor = {
   programa_top: FilaVisible | null;
   requiere_revision: boolean;
   ranking: FilaVisible[];
+  // Programas a 10 puntos o menos del n.º 1, con la razón de que no quedaran primero.
+  cercanos: { id: IdPrograma; nombre: string; url: string; fit: number; razon: string }[];
+  motivo_top: string;
   familias: { id: IdFamilia; nombre: string; valor: number }[];
   chips: string[];
   orden: IdPrograma[];

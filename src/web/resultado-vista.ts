@@ -16,6 +16,8 @@ export type ResultadoPublico = {
   tipo: "recomendado" | "preliminar" | "conversacion";
   programa_top: FilaPrograma | null;
   ranking: FilaPrograma[];
+  cercanos: { id: string; nombre: string; url: string; fit: number; razon: string }[];
+  motivo_top: string;
   familias: { id: string; nombre: string; valor: number }[];
   chips: string[];
 };
@@ -139,11 +141,22 @@ export function renderResultado(
   );
   contenedor.append(tarjeta);
 
-  if (r.ranking.length > 0) {
+  if (r.cercanos.length > 0) {
+    contenedor.append(
+      el("section", { class: "pila" }, [
+        el("h2", {}, ["Rutas casi igual de fuertes (a 10 puntos o menos)"]),
+        el("p", {}, [r.motivo_top]),
+        ...r.cercanos.map((f) => barra(f.nombre, f.fit, f.razon)),
+      ]),
+    );
+  }
+  const cercanosIds = new Set(r.cercanos.map((c) => c.id));
+  const otros = r.ranking.filter((f) => !cercanosIds.has(f.id));
+  if (otros.length > 0) {
     contenedor.append(
       el("section", { class: "pila" }, [
         el("h2", {}, ["Otras rutas que podrían servirte"]),
-        ...r.ranking.map((f) =>
+        ...otros.map((f) =>
           barra(
             f.nombre,
             f.fit,

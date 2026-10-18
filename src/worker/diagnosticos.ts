@@ -240,6 +240,8 @@ diagnosticos.post(
       detalle: JSON.stringify({
         programa_top: r.programa_top,
         ranking: r.ranking,
+        cercanos: r.cercanos,
+        motivo_top: r.motivo_top,
         familias: r.familias,
         chips: r.chips,
       }),

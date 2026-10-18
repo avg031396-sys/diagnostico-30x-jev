@@ -166,3 +166,44 @@ describe("resolverResultado", () => {
     }
   });
 });
+
+describe("rutas casi igual de fuertes", () => {
+  it("lista los programas a 10 puntos o menos y explica por qué quedó primero el n.º 1", () => {
+    const noul = noulBase({
+      bloqueo_comercial: 0.85,
+      dolor_growth: 0.85,
+      fit_growth_rockstar: 0.8,
+      fit_sales_machine: 0.75,
+      fit_ai_sales: 0.5,
+    });
+    const salida = resolverResultado(
+      entrada({
+        respuestas: { noul, choice: { valor: "Growth_Rockstar", confianza: 0.8 }, score: null },
+        dolores_confirmados: ["bloqueo_comercial", "dolor_growth"],
+        respuestas_seguimiento: {},
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      const r = salida.resultado;
+      expect(r.programa_top?.id).toBe("Growth_Rockstar");
+      expect(r.cercanos.map((c) => c.id)).toEqual(["Sales_Machine"]);
+      expect(r.cercanos[0]?.razon).toContain("JEV");
+      expect(r.motivo_top).toContain("casi igual");
+    }
+  });
+
+  it("sin rutas cercanas no hay explicación", () => {
+    const salida = resolverResultado(
+      entrada({ respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" } }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      for (const c of salida.resultado.cercanos) {
+        expect((salida.resultado.programa_top?.fit ?? 0) - c.fit).toBeLessThanOrEqual(0.1 + 1e-9);
+      }
+    }
+  });
+});

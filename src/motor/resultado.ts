@@ -1,5 +1,5 @@
 import type { IdDolor, IdPrograma, Perfil } from "./catalogo.ts";
-import { DOLORES_CHIP } from "./catalogo.ts";
+import { DOLORES_CHIP, programaPorId } from "./catalogo.ts";
 import { familiasDe, valoresFamilias } from "./dolores.ts";
 import {
   aFilaVisible,
@@ -40,6 +40,46 @@ function sumarPrioridades(
     salida[id as IdPrograma] = (salida[id as IdPrograma] ?? 0) + (n ?? 0);
   }
   return salida;
+}
+
+const DELTA_CERCANO = 0.1;
+
+function cercanosDe(
+  top: FilaRanking,
+  vis: FilaRanking[],
+  choice: string | null,
+): { cercanos: ResultadoMotor["cercanos"]; motivo: string } {
+  const nombreTop = programaPorId(top.programa).nombre;
+  const cercanos = vis
+    .filter((f) => f !== top && top.fit - f.fit <= DELTA_CERCANO + 1e-9)
+    .map((f) => {
+      const p = programaPorId(f.programa);
+      let razon: string;
+      if (!f.cumple) {
+        razon = `aún no cumples: ${f.condicion ?? "el requisito"}`;
+      } else if (f.bloqueado_como_top) {
+        razon = "por el formato que elegiste no queda como primera opción";
+      } else if (f.fit < f.fit_jev) {
+        razon = "tus respuestas lo ubicaron un poco más abajo";
+      } else if (choice === top.programa) {
+        razon = `JEV, leyendo tu reto completo, se inclinó por ${nombreTop}`;
+      } else if (f.prioridad < top.prioridad) {
+        razon = `tus respuestas de seguimiento favorecieron a ${nombreTop}`;
+      } else {
+        razon = `su afinidad es casi igual; ${nombreTop} quedó primero por un detalle fino`;
+      }
+      return { id: f.programa, nombre: p.nombre, url: p.url, fit: f.fit, razon };
+    });
+  let motivo = "";
+  if (cercanos.length > 0) {
+    motivo =
+      choice === top.programa
+        ? `Hay rutas casi igual de fuertes. JEV, leyendo tu reto completo, se inclinó por ${nombreTop}.`
+        : top.prioridad > 0
+          ? "Hay rutas casi igual de fuertes. Tus respuestas de seguimiento favorecieron a esta."
+          : "Hay rutas casi igual de fuertes. Esta quedó primero por su combinación de afinidad y requisitos.";
+  }
+  return { cercanos, motivo };
 }
 
 function elegirTop(filas: FilaRanking[], umbrales: Umbrales) {
@@ -119,6 +159,7 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
     (choice?.confianza ?? 0) < umbrales.umbral_choice ||
     (respuestas.noul.datos_incoherentes ?? 0) > 0.5;
 
+  const cerca = top ? cercanosDe(top, vis, choice?.valor ?? null) : { cercanos: [], motivo: "" };
   const tipo = !top ? "conversacion" : requiereRevision ? "preliminar" : "recomendado";
   const etiquetas = new Map<string, string>(DOLORES_CHIP.map((d) => [d.id, d.etiqueta]));
 
@@ -130,6 +171,8 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
       programa_top: top ? aFilaVisible(top) : null,
       requiere_revision: requiereRevision,
       ranking: vis.filter((f) => f !== top).map(aFilaVisible),
+      cercanos: cerca.cercanos,
+      motivo_top: cerca.motivo,
       familias: valoresFamilias(respuestas.noul),
       chips: entrada.dolores_confirmados.map((id) => etiquetas.get(id) ?? id),
       orden: filas.map((f) => f.programa),

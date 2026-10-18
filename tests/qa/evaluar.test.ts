@@ -25,6 +25,8 @@ function resultado(top: string | null, revision: boolean, orden: string[]): Resu
       : null,
     requiere_revision: revision,
     ranking: [],
+    cercanos: [],
+    motivo_top: "",
     familias: [],
     chips: [],
     orden: orden as never,
