@@ -1,6 +1,6 @@
 {
   "umbral_recomendar": 0.6,
-  "umbral_mostrar": 0.4,
+  "umbral_mostrar": 0.35,
   "umbral_choice": 0.5,
   "umbral_dolor": 0.6,
   "umbral_vaga": 0.6,

@@ -4,6 +4,7 @@ import umbrales from "../../src/data/umbrales.json" with { type: "json" };
 import { construirEstado, construirPreguntas } from "../../src/jev/preguntas.ts";
 import type { Etapa } from "../../src/motor/catalogo.ts";
 import { ETAPAS, FAMILIAS, PROGRAMAS } from "../../src/motor/catalogo.ts";
+import { rejilla } from "../../src/qa/calibrar.ts";
 
 type Insumo = { id: string; tipo: string; opciones?: { id: string }[] };
 const PREGUNTAS = insumos.preguntas_jev as unknown as Insumo[];
@@ -120,15 +121,20 @@ describe("paridad entre el catálogo y los insumos", () => {
   });
 });
 
-describe("umbrales iniciales", () => {
-  it("coinciden con los valores propuestos en los insumos", () => {
-    expect(umbrales).toEqual({
-      umbral_recomendar: 0.6,
-      umbral_mostrar: 0.4,
-      umbral_choice: 0.5,
-      umbral_dolor: 0.6,
-      umbral_vaga: 0.6,
-      delta_hermanos: 0.15,
+describe("umbrales", () => {
+  it("los que no calibra `npm run calibrar` siguen en los valores propuestos en los insumos", () => {
+    expect({
+      umbral_dolor: umbrales.umbral_dolor,
+      umbral_vaga: umbrales.umbral_vaga,
+      delta_hermanos: umbrales.delta_hermanos,
+    }).toEqual({ umbral_dolor: 0.6, umbral_vaga: 0.6, delta_hermanos: 0.15 });
+  });
+
+  it("los calibrados están dentro de la rejilla de calibración", () => {
+    expect(rejilla()).toContainEqual({
+      umbral_recomendar: umbrales.umbral_recomendar,
+      umbral_mostrar: umbrales.umbral_mostrar,
+      umbral_choice: umbrales.umbral_choice,
     });
   });
 });
