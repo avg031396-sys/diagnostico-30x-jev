@@ -1,14 +1,17 @@
 import { Hono } from "hono";
+import { borrado } from "./borrado.ts";
 import { diagnosticos } from "./diagnosticos.ts";
+import { leads } from "./leads.ts";
 import { qa } from "./qa.ts";
 import { paginaResultado, resultados } from "./resultados.ts";
 import { cabeceras, limitarDiagnosticos, manejarError } from "./seguridad.ts";
 
 // Variables y secretos que lee el Worker. `Env` es global: lo genera `wrangler types` en
 // worker-configuration.d.ts (D1 `DB`, `ASSETS`, `LIMITE_DIAGNOSTICO` y las variables de wrangler.jsonc).
-// Los secretos de Composio y QA_TOKEN no están en wrangler.jsonc, por eso se declaran opcionales aquí.
+// Los secretos (Composio, OpenRouter, QA_TOKEN, LEADS_TOKEN) no están en wrangler.jsonc, por eso se declaran opcionales aquí.
 export type Bindings = Env & {
   QA_TOKEN?: string;
+  LEADS_TOKEN?: string;
   OPENROUTER_API_KEY?: string;
   COMPOSIO_API_KEY?: string;
   COMPOSIO_OPENROUTER_ACCOUNT_ID?: string;
@@ -26,6 +29,8 @@ app.get("/api/salud", (c) => c.json({ ok: true, modo: c.env.JEV_MODE }));
 app.route("/api/diagnosticos", diagnosticos);
 app.route("/api/resultados", resultados);
 app.route("/api/qa", qa);
+app.route("/api/borrado", borrado);
+app.route("/api/leads", leads);
 app.get("/r/:id", paginaResultado);
 
 app.notFound((c) => {

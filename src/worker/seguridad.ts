@@ -26,11 +26,12 @@ export const cabeceras: MiddlewareHandler<{ Bindings: Bindings }> = async (c, ne
 };
 
 export const limitarDiagnosticos: MiddlewareHandler<{ Bindings: Bindings }> = async (c, next) => {
-  if (
-    c.req.method === "POST" &&
-    c.req.path.startsWith("/api/diagnosticos") &&
-    c.env.LIMITE_ACTIVO !== "0"
-  ) {
+  const ruta = c.req.path;
+  const limitada =
+    (c.req.method === "POST" &&
+      (ruta.startsWith("/api/diagnosticos") || ruta.startsWith("/api/borrado"))) ||
+    ruta.startsWith("/api/leads");
+  if (limitada && c.env.LIMITE_ACTIVO !== "0") {
     const { success } = await c.env.LIMITE_DIAGNOSTICO.limit({
       key: c.req.header("CF-Connecting-IP") ?? "sin-ip",
     });

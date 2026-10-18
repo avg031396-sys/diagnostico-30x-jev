@@ -39,6 +39,10 @@
     "JEV_MODEL": "typesafe/jev-1.14",
     "LIMITE_ACTIVO": "1"
   },
+  // Purga diaria de leads con más de 90 días (src/worker/borrado.ts).
+  "triggers": {
+    "crons": ["0 7 * * *"]
+  },
   "observability": {
     "enabled": true
   }
