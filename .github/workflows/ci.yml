@@ -1,0 +1,55 @@
+# Compuerta de calidad en cada push y PR. No despliega ni usa secretos: JEV corre en modo mock.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WRANGLER_SEND_METRICS: "false"
+
+jobs:
+  compuerta:
+    name: Typecheck, lint y unitarias
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  e2e:
+    name: E2E (Playwright + wrangler dev, JEV mock)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: compuerta
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .dev.vars.example .dev.vars
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
