@@ -26,3 +26,16 @@ test("una ruta /api inexistente devuelve el error JSON único", async ({ request
     error: { code: "NO_ENCONTRADO", message: "No encontramos lo que buscas." },
   });
 });
+
+test("los estáticos y la API devuelven la misma CSP", async ({ request }) => {
+  const rutas = ["/", "/no-existe", "/api/salud"];
+  const csp: (string | undefined)[] = [];
+  for (const ruta of rutas) {
+    const respuesta = await request.get(ruta);
+    expect(respuesta.headers()["x-content-type-options"]).toBe("nosniff");
+    csp.push(respuesta.headers()["content-security-policy"]);
+  }
+  expect(csp[0]).toBeTruthy();
+  expect(csp[1]).toBe(csp[0]);
+  expect(csp[2]).toBe(csp[0]);
+});
