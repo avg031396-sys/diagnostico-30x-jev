@@ -1,5 +1,7 @@
 # Diagnóstico 30X con JEV
 
+[![CI](https://github.com/avg031396-sys/diagnostico-30x-jev/actions/workflows/ci.yml/badge.svg)](https://github.com/avg031396-sys/diagnostico-30x-jev/actions/workflows/ci.yml)
+
 > Este es un prototipo no oficial para el Hackatón 30X. No tiene relación formal con 30X.
 
 ## Qué es
@@ -45,24 +47,38 @@ Compuerta de calidad: `npm run typecheck && npm run lint && npm test && npm run 
 
 ## Conectar JEV
 
-Modo de producción actual: `JEV_MODE=openrouter`, llamada directa a OpenRouter con `OPENROUTER_API_KEY` (en `.dev.vars` local o con `npx wrangler secret put OPENROUTER_API_KEY`). Prueba de una sola llamada: `JEV_MODE=openrouter npm run jev:vivo`. Alternativa con Composio:
+`JEV_MODE` elige el adaptador (`src/jev/cliente.ts`):
 
-El camino de producción es Composio con el permiso **Proxy execute** hacia la conexión de OpenRouter:
+| Modo | Para qué | Secretos |
+|---|---|---|
+| `mock` | Desarrollo y pruebas. Determinista, sin red. | ninguno |
+| `openrouter` | **Producción actual.** Llamada directa a `/api/alpha/decisions`. | `OPENROUTER_API_KEY` |
+| `composio-proxy` | Alternativa vía el proxy de Composio hacia la conexión de OpenRouter. | `COMPOSIO_API_KEY`, `COMPOSIO_OPENROUTER_ACCOUNT_ID` |
+| `composio-jev` | Respaldo con el toolkit `jev` de Composio (sin verificar contra la cuenta real). | `COMPOSIO_API_KEY` |
 
-1. Crea una clave de API en Composio con permiso «Proxy execute» y anota el `connected_account_id`
-   de la conexión de OpenRouter.
-2. Ponlas en `.dev.vars` (local) o con `npx wrangler secret put` (producción):
-   `COMPOSIO_API_KEY` y `COMPOSIO_OPENROUTER_ACCOUNT_ID`. Pon `JEV_MODE=composio-proxy`.
-3. Prueba una llamada real (gasta saldo, solo una): `JEV_MODE=composio-proxy npm run jev:vivo`.
+Los secretos van en `.dev.vars` (local) o con `npx wrangler secret put <NOMBRE>` (producción).
+Prueba de una sola llamada real (gasta saldo): `JEV_MODE=openrouter npm run jev:vivo`.
 
-El modelo está fijado en `typesafe/jev-1.14` (nunca un alias `latest`). Hay un respaldo
-`composio-jev` sin verificar contra la cuenta real.
+El modelo está fijado en `typesafe/jev-1.14` (nunca un alias `latest`): los umbrales están
+calibrados para esa versión.
 
 ## Resultados de /qa
 
 La página [`/qa.html`](/qa.html) muestra la última corrida de calidad: los casos de prueba de
 `src/data/insumos-jev.json` evaluados contra el motor, con aciertos top-1 y top-3, latencia y costo.
-Última corrida con JEV real (18 oct 2026): **46/54 en top-1 (85 %) y 52/54 en top-3 (96 %)**, latencia p50 408 ms y p95 1401 ms, costo total USD 0.0073 por los 60 casos. Como referencia, el modo `mock` (buscador de palabras clave) logra 29/54 y 44/54. El script `npm run calibrar` está pendiente.
+Última corrida con JEV real (18 oct 2026): **46/54 en top-1 (85 %) y 52/54 en top-3 (96 %)**, latencia p50 408 ms y p95 1401 ms, costo total USD 0.0073 por los 60 casos. Como referencia, el modo `mock` (buscador de palabras clave) logra 29/54 y 44/54.
+
+### Calibración de umbrales
+
+`npm run calibrar -- <export.json>` vuelve a correr el motor, sin red, sobre las respuestas de JEV
+guardadas en una corrida (`/api/qa/ultima`), con una rejilla de `umbral_recomendar`,
+`umbral_mostrar` y `umbral_choice`. Calibra con los casos originales y valida con las paráfrasis
+(`parafrasis-*`). Si la validación cae más de 10 puntos, no escribe. Con `--escribir` actualiza
+`src/data/umbrales.json`.
+
+Con la corrida anterior, bajar `umbral_mostrar` de 0.40 a 0.35 sube la calibración de 18/24 a
+19/24 en top-1 y deja igual la validación (28/30). En total: **47/54 en top-1 (87 %)**. Ese valor
+ya está aplicado.
 
 ## Ver los leads (solo la persona dueña de la cuenta)
 

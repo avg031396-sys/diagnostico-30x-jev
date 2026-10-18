@@ -16,9 +16,9 @@ de TypeSafe, respuestas tipadas noul/choice/score) decide el programa de 30X má
 | E2E + API | `npm run test:e2e` · un archivo: `npm run test:e2e -- tests/e2e/salud.spec.ts` |
 | D1 local | `npm run db:migrar` · inspeccionar: `npx wrangler d1 execute DB --local --command "SELECT ..."` |
 | Imágenes OG | `npm run og` (Playwright; se comitean los PNG de `public/og/`) |
-| Calibrar | `npm run calibrar -- <export-de-qa.json>` · escribir umbrales: agrega `--escribir` |
+| Calibrar | `npm run calibrar -- <export-de-qa.json>` · escribir umbrales: agrega `--escribir` (motor en `src/qa/calibrar.ts`) |
 | Prueba de despliegue | `npm run deploy:prueba` (`wrangler deploy --dry-run`, no toca la cuenta) |
-| Llamada real a JEV | `JEV_MODE=composio-proxy npm run jev:vivo` — solo Alonso, gasta saldo; el constructor no la corre |
+| Llamada real a JEV | `JEV_MODE=openrouter npm run jev:vivo` (o `composio-proxy`) — solo Alonso, gasta saldo; el constructor no la corre |
 
 **Compuerta:** `npm run typecheck && npm run lint && npm test` antes de marcar cualquier tarea.
 Si la tarea toca el Worker o la interfaz, también `npm run test:e2e`.
@@ -109,14 +109,17 @@ decide (ranking, requisitos, control con Choice, seguimientos) → fila en `resu
 
 | Variable | Obligatoria | Usada por | Fuente |
 |---|---|---|---|
-| `JEV_MODE` | sí (default `mock`) | `src/jev/cliente.ts` | `wrangler.jsonc` vars; producción: `npm run deploy` |
+| `JEV_MODE` | sí (`mock`, `openrouter`, `composio-proxy`, `composio-jev`) | `src/jev/cliente.ts` | `wrangler.jsonc` vars (`openrouter` en producción); `.dev.vars` y e2e usan `mock` |
 | `JEV_MODEL` | sí (default `typesafe/jev-1.14`) | adaptadores JEV | `wrangler.jsonc` vars |
 | `LIMITE_ACTIVO` | sí (default `1`) | `src/worker/seguridad.ts` | `wrangler.jsonc` vars; e2e pasa `0` |
 | `QA_TOKEN` | solo para `/api/qa/lote` y `cerrar` | `src/worker/qa.ts` | `.dev.vars` (local `token-e2e-local`); producción: secret |
+| `OPENROUTER_API_KEY` | solo con `JEV_MODE=openrouter` | `src/jev/openrouter.ts` | OpenRouter; producción: secret |
 | `COMPOSIO_API_KEY` | solo con `JEV_MODE=composio-*` | `proxy.ts`, `composio-jev.ts` | Composio, permiso "Proxy execute" |
 | `COMPOSIO_OPENROUTER_ACCOUNT_ID` | solo con `composio-proxy` | `proxy.ts` | Composio, conexión OpenRouter |
 | `COMPOSIO_JEV_ACCOUNT_ID` | opcional (`composio-jev`) | `composio-jev.ts` | Composio |
 | `JEV_MODEL_COMPOSIO` | opcional (si falta, usa `JEV_MODEL`) | `composio-jev.ts` | `.dev.vars` / secret |
+
+CI: `.github/workflows/ci.yml` corre typecheck, lint, unitarias y e2e (mock) en cada push a `main` y en cada PR.
 
 `.dev.vars.example` se comitea con valores ficticios; `.dev.vars` nunca. Bindings: `DB` (D1),
 `ASSETS`, `LIMITE_DIAGNOSTICO` (rate limit 10 por minuto por IP).
