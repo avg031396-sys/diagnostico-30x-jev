@@ -1,0 +1,159 @@
+{
+  "id": "gen-ejemplo-0001",
+  "model": "typesafe/jev-1.14",
+  "provider": "ejemplo",
+  "answers": {
+    "programa_recomendado": {
+      "type": "choice",
+      "choice": "Sales_Machine",
+      "confidence": 0.72,
+      "probabilities": {
+        "Sales_Machine": 0.72,
+        "LinkedIn_Sales": 0.2,
+        "requiere_revision": 0.08
+      }
+    },
+    "madurez_negocio": {
+      "type": "score",
+      "score": 2,
+      "confidence": 0.66,
+      "probabilities": [0.05, 0.1, 0.66, 0.15, 0.04],
+      "legend": [
+        "Idea o MVP sin ventas",
+        "Primeros clientes, todavía buscando product-market fit",
+        "Vende de forma recurrente, por debajo de 1M USD al año",
+        "Negocio que ya factura entre 1M y 20M USD al año",
+        "Empresa grande (más de 20M USD al año) o corporación"
+      ]
+    },
+    "dependencia_fundador": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "bloqueo_comercial": {
+      "type": "noul",
+      "noul": 0.85
+    },
+    "quiere_adoptar_ia": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "busca_capital": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "busca_expansion": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "enamorado_de_solucion": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "objecion_tiempo_o_precio": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "respuesta_vaga": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "datos_incoherentes": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "ventas_por_referidos": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "operacion_desordenada": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "tareas_repetitivas_ia": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_inmersion_ejecutiva": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_multipliers": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_ai_for_executives": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_operaciones_con_ai": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_sales_machine": {
+      "type": "noul",
+      "noul": 0.85
+    },
+    "fit_ai_sales": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_fundraising_fundamentals": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_next": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_raise_your_round": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_instagram_tiktok": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_linkedin_sales": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_second_brain": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_ai_for_developers": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_growth_rockstar": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_advanced_strategy": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_xtreme_growth": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "fit_planes_corporativos": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "dolor_growth": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "dolor_equipo_talento": {
+      "type": "noul",
+      "noul": 0.1
+    }
+  },
+  "usage": {
+    "input_tokens": 2410,
+    "output_tokens": 180,
+    "cost": 0.0042
+  }
+}
