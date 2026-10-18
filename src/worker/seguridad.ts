@@ -11,6 +11,8 @@ const CABECERAS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  // Solo tiene efecto sobre HTTPS (producción); los navegadores la ignoran en http://127.0.0.1.
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 };
 
 export const cabeceras: MiddlewareHandler<{ Bindings: Bindings }> = async (c, next) => {

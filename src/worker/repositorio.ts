@@ -142,21 +142,33 @@ export async function completarLead(
     respuestas_seguimiento: Record<string, string> | null;
     confianza_choice: number | null;
   },
-): Promise<void> {
+): Promise<string | null> {
   const r = datos.resultado;
-  await db.batch([
+  // Las dos sentencias solo actúan si el lead aún no está completo: dos "finalizar" simultáneos
+  // (doble clic) dejan un solo resultado. Devuelve el resultado_id que quedó guardado.
+  const [, actualizacion] = await db.batch([
     db
       .prepare(
         `INSERT INTO resultados (id, nombre_pila, tipo, requiere_revision, programa_id, fit, detalle)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         SELECT ?, ?, ?, ?, ?, ?, ?
+         WHERE EXISTS (SELECT 1 FROM leads WHERE token = ? AND estado != 'completo')`,
       )
-      .bind(r.id, r.nombre_pila, r.tipo, r.requiere_revision, r.programa_id, r.fit, r.detalle),
+      .bind(
+        r.id,
+        r.nombre_pila,
+        r.tipo,
+        r.requiere_revision,
+        r.programa_id,
+        r.fit,
+        r.detalle,
+        datos.token,
+      ),
     db
       .prepare(
         `UPDATE leads SET estado = 'completo', respuestas_seguimiento = ?, programa_top = ?,
           fit_top = ?, confianza_choice = ?, requiere_revision = ?, resultado_id = ?,
           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-         WHERE token = ?`,
+         WHERE token = ? AND estado != 'completo'`,
       )
       .bind(
         datos.respuestas_seguimiento ? JSON.stringify(datos.respuestas_seguimiento) : null,
@@ -168,6 +180,14 @@ export async function completarLead(
         datos.token,
       ),
   ]);
+  if ((actualizacion?.meta.changes ?? 0) > 0) {
+    return r.id;
+  }
+  const lead = await db
+    .prepare("SELECT resultado_id FROM leads WHERE token = ?")
+    .bind(datos.token)
+    .first<{ resultado_id: string | null }>();
+  return lead?.resultado_id ?? null;
 }
 
 export async function marcarAsesor(db: D1Database, token: string): Promise<boolean> {

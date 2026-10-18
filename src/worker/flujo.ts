@@ -1,6 +1,6 @@
 import umbralesJson from "../data/umbrales.json" with { type: "json" };
 import type { ConfigJev } from "../jev/cliente.ts";
-import type { ModoJev, RespuestasJev } from "../jev/tipos.ts";
+import type { EvaluacionJev, ModoJev, RespuestasJev } from "../jev/tipos.ts";
 import type { IdDolor, Perfil } from "../motor/catalogo.ts";
 import { ETAPA_NIVEL } from "../motor/catalogo.ts";
 import { detectarDolores, necesitaAclaracion } from "../motor/dolores.ts";
@@ -112,4 +112,50 @@ export function resultadoPublico(fila: FilaResultado) {
     cercanos: detalle.cercanos ?? [],
     motivo_top: detalle.motivo_top ?? "",
   };
+}
+
+// Fila de `resultados` a partir de la salida del motor. Solo el nombre de pila sale del lead.
+export function filaResultado(
+  id: string,
+  nombre: string,
+  r: ResultadoMotor,
+): Omit<FilaResultado, "created_at"> {
+  return {
+    id,
+    nombre_pila: nombre.trim().split(/\s+/)[0]?.slice(0, 40) ?? "",
+    tipo: r.tipo,
+    requiere_revision: r.requiere_revision ? 1 : 0,
+    programa_id: r.programa_top?.id ?? null,
+    fit: r.programa_top?.fit ?? null,
+    detalle: JSON.stringify({
+      programa_top: r.programa_top,
+      ranking: r.ranking,
+      cercanos: r.cercanos,
+      motivo_top: r.motivo_top,
+      familias: r.familias,
+      chips: r.chips,
+    }),
+  };
+}
+
+// Respuesta de `finalizar` cuando ya hay un resultado guardado.
+export function respuestaFinal(fila: Omit<FilaResultado, "created_at">) {
+  return {
+    pendiente: false,
+    resultado_id: fila.id,
+    resultado: resultadoPublico({ ...fila, created_at: "" }),
+  };
+}
+
+// Sin datos personales: del token solo los primeros 4 caracteres.
+export function log(evento: string, token: string, modo: string, ev?: EvaluacionJev) {
+  console.log(
+    JSON.stringify({
+      evento,
+      token: token.slice(0, 4),
+      modo,
+      latencia_ms: ev?.latencia_ms ?? 0,
+      costo_usd: ev?.usage.cost ?? 0,
+    }),
+  );
 }

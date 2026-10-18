@@ -20,10 +20,12 @@ import {
   armarVista,
   configJevDesdeEnv,
   dolorDetectadoDe,
+  filaResultado,
+  log,
   MENSAJE_JEV,
   nuevoResultadoId,
   nuevoToken,
-  resultadoPublico,
+  respuestaFinal,
   UMBRALES,
 } from "./flujo.ts";
 import {
@@ -37,18 +39,6 @@ import {
 } from "./repositorio.ts";
 
 export const diagnosticos = new Hono<{ Bindings: Bindings }>();
-
-function log(evento: string, token: string, modo: string, ev?: EvaluacionJev) {
-  console.log(
-    JSON.stringify({
-      evento,
-      token: token.slice(0, 4),
-      modo,
-      latencia_ms: ev?.latencia_ms ?? 0,
-      costo_usd: ev?.usage.cost ?? 0,
-    }),
-  );
-}
 
 async function llamarJev(
   env: Bindings,
@@ -202,11 +192,7 @@ diagnosticos.post(
     if (lead.estado === "completo" && lead.resultado_id) {
       const fila = await obtenerResultado(c.env.DB, lead.resultado_id);
       if (fila) {
-        return c.json({
-          pendiente: false,
-          resultado_id: fila.id,
-          resultado: resultadoPublico(fila),
-        });
+        return c.json(respuestaFinal(fila));
       }
     }
     const cuerpo = c.req.valid("json");
@@ -228,35 +214,21 @@ diagnosticos.post(
     if (salida.pendiente) {
       return c.json({ pendiente: true, seguimientos: salida.seguimientos });
     }
-    const r = salida.resultado;
-    const id = nuevoResultadoId();
-    const fila = {
-      id,
-      nombre_pila: lead.nombre.trim().split(/\s+/)[0]?.slice(0, 40) ?? "",
-      tipo: r.tipo,
-      requiere_revision: r.requiere_revision ? 1 : 0,
-      programa_id: r.programa_top?.id ?? null,
-      fit: r.programa_top?.fit ?? null,
-      detalle: JSON.stringify({
-        programa_top: r.programa_top,
-        ranking: r.ranking,
-        cercanos: r.cercanos,
-        motivo_top: r.motivo_top,
-        familias: r.familias,
-        chips: r.chips,
-      }),
-    };
-    await completarLead(c.env.DB, {
+    const fila = filaResultado(nuevoResultadoId(), lead.nombre, salida.resultado);
+    const guardado = await completarLead(c.env.DB, {
       token,
       resultado: fila,
       respuestas_seguimiento: cuerpo.respuestas_seguimiento ?? null,
       confianza_choice: salida.confianza_choice,
     });
-    return c.json({
-      pendiente: false,
-      resultado_id: id,
-      resultado: resultadoPublico({ ...fila, created_at: "" }),
-    });
+    if (guardado && guardado !== fila.id) {
+      // Otra petición de finalizar (doble clic) ganó la carrera: se devuelve su resultado.
+      const previo = await obtenerResultado(c.env.DB, guardado);
+      if (previo) {
+        return c.json(respuestaFinal(previo));
+      }
+    }
+    return c.json(respuestaFinal(fila));
   },
 );
 

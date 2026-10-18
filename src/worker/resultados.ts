@@ -47,7 +47,11 @@ export async function paginaResultado(c: Context<{ Bindings: Bindings }>) {
     ["og:type", "website"],
     ["twitter:card", "summary_large_image"],
   ]
-    .map(([k, v]) => `<meta property="${k}" content="${escapar(v ?? "")}">`)
+    // Open Graph usa `property`; las tarjetas de X/Twitter usan `name`.
+    .map(([k = "", v = ""]) => {
+      const atributo = k.startsWith("twitter:") ? "name" : "property";
+      return `<meta ${atributo}="${k}" content="${escapar(v)}">`;
+    })
     .join("");
   const base = await c.env.ASSETS.fetch(new URL("/resultado", c.req.url));
   return new HTMLRewriter()

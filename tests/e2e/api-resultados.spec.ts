@@ -72,7 +72,8 @@ test("finalizar, resultado público, /r y asesor", async ({ request }) => {
   expect(html).toContain('property="og:description"');
   expect(html).toMatch(/property="og:image" content="http[^"]*\/og\/Sales_Machine\.png"/);
   expect(html).toContain(`/r/${f.resultado_id}"`);
-  expect(html).toContain('name="twitter:card"'.replace("name", "property"));
+  expect(html).toContain('name="twitter:card"');
+  expect(html).toContain('property="og:title"');
   expect((await request.get("/r/ZZZZZZZZZZ")).status()).toBe(404);
 
   // Asesor.
@@ -92,4 +93,22 @@ test("finalizar sobre un lead en error da 409", async ({ request }) => {
   expect(r.status()).toBe(409);
   expect((await r.json()).error.code).toBe("JEV_NO_DISPONIBLE");
   expect((await request.post(`/api/diagnosticos/${token}/asesor`)).status()).toBe(204);
+});
+
+test("dos finalizar simultáneos (doble clic) dejan un solo resultado", async ({ request }) => {
+  const creado = await request.post("/api/diagnosticos", { data: cuerpo(RETO_VENTAS) });
+  const { token } = await creado.json();
+  const datos = {
+    dolores_confirmados: DOLORES,
+    respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" },
+  };
+  const [a, b] = await Promise.all([
+    request.post(`/api/diagnosticos/${token}/finalizar`, { data: datos }),
+    request.post(`/api/diagnosticos/${token}/finalizar`, { data: datos }),
+  ]);
+  const [ja, jb] = [await a.json(), await b.json()];
+  expect(ja.resultado_id).toMatch(/^[0-9A-Za-z]{10}$/);
+  expect(jb.resultado_id).toBe(ja.resultado_id);
+  const pub = await request.get(`/api/resultados/${ja.resultado_id}`);
+  expect(pub.status()).toBe(200);
 });
