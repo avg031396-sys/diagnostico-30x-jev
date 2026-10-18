@@ -116,3 +116,36 @@ describe("composio-jev", () => {
     });
   });
 });
+
+describe("openrouter directo", () => {
+  const config = {
+    modo: "openrouter" as const,
+    modelo: "typesafe/jev-1.14",
+    openrouterApiKey: "clave-ficticia",
+  };
+
+  it("hace un POST a OpenRouter con Bearer y normaliza la respuesta", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(respuestaJson(fixture));
+    const r = await crearClienteJev(config, fetchFn).evaluar(estado, preguntas);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchFn.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://openrouter.ai/api/alpha/decisions");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer clave-ficticia");
+    const cuerpo = JSON.parse(init.body as string);
+    expect(cuerpo.model).toBe("typesafe/jev-1.14");
+    expect(cuerpo.state).toEqual(estado);
+    expect(init.body as string).not.toContain("evidencia");
+    expect(r.answers.choice).toEqual({ valor: "Sales_Machine", confianza: 0.72 });
+    expect(r.usage.cost).toBe(0.0042);
+  });
+
+  it("HTTP 402 da JEV_HTTP y sin clave da JEV_CONFIG", async () => {
+    const sinSaldo = vi.fn().mockResolvedValue(respuestaJson({}, 402));
+    await expect(
+      crearClienteJev(config, sinSaldo).evaluar(estado, preguntas),
+    ).rejects.toMatchObject({ codigo: "JEV_HTTP" });
+    expect(() => crearClienteJev({ modo: "openrouter", modelo: "m" })).toThrowError(
+      expect.objectContaining({ codigo: "JEV_CONFIG" }),
+    );
+  });
+});

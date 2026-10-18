@@ -24,6 +24,7 @@ export function configJevDesdeEnv(env: Bindings): ConfigJev {
     modo: env.JEV_MODE as ModoJev,
     modelo: env.JEV_MODEL,
     modeloComposio: env.JEV_MODEL_COMPOSIO || undefined,
+    openrouterApiKey: env.OPENROUTER_API_KEY || undefined,
     composioApiKey: env.COMPOSIO_API_KEY || undefined,
     cuentaOpenrouter: env.COMPOSIO_OPENROUTER_ACCOUNT_ID || undefined,
     cuentaJev: env.COMPOSIO_JEV_ACCOUNT_ID || undefined,

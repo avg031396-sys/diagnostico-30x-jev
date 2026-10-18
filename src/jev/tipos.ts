@@ -1,6 +1,6 @@
 import type { Etapa, Perfil } from "../motor/catalogo.ts";
 
-export type ModoJev = "mock" | "composio-proxy" | "composio-jev";
+export type ModoJev = "mock" | "openrouter" | "composio-proxy" | "composio-jev";
 
 // Forma de las preguntas que viajan a JEV (una por cada pregunta de `preguntas_jev`).
 export type PreguntaJev =

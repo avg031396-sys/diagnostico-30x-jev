@@ -1,5 +1,6 @@
 import { crearComposioJev } from "./composio-jev.ts";
 import { crearMockJev } from "./mock.ts";
+import { crearOpenRouterJev } from "./openrouter.ts";
 import { crearProxyJev } from "./proxy.ts";
 import type { EstadoJev, EvaluacionJev, JevClient, ModoJev, PreguntasJev } from "./tipos.ts";
 import { JevError } from "./tipos.ts";
@@ -8,6 +9,7 @@ export type ConfigJev = {
   modo: ModoJev;
   modelo: string;
   modeloComposio?: string;
+  openrouterApiKey?: string;
   composioApiKey?: string;
   cuentaOpenrouter?: string;
   cuentaJev?: string;
@@ -17,6 +19,8 @@ export function crearClienteJev(config: ConfigJev, fetchFn: typeof fetch = fetch
   switch (config.modo) {
     case "mock":
       return crearMockJev();
+    case "openrouter":
+      return crearOpenRouterJev(config, fetchFn);
     case "composio-proxy":
       return crearProxyJev(config, fetchFn);
     case "composio-jev":

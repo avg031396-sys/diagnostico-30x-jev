@@ -9,6 +9,7 @@ import { cabeceras, limitarDiagnosticos, manejarError } from "./seguridad.ts";
 // Los secretos de Composio y QA_TOKEN no están en wrangler.jsonc, por eso se declaran opcionales aquí.
 export type Bindings = Env & {
   QA_TOKEN?: string;
+  OPENROUTER_API_KEY?: string;
   COMPOSIO_API_KEY?: string;
   COMPOSIO_OPENROUTER_ACCOUNT_ID?: string;
   COMPOSIO_JEV_ACCOUNT_ID?: string;

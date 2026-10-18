@@ -40,4 +40,9 @@ describe("jev-en-vivo", () => {
     const codigo = await ejecutar({ env: { JEV_MODE: "mock" }, imprimir: () => undefined });
     expect(codigo).toBe(2);
   });
+
+  it("modo openrouter sin clave devuelve 3", async () => {
+    const codigo = await ejecutar({ env: { JEV_MODE: "openrouter" }, imprimir: () => undefined });
+    expect(codigo).toBe(3);
+  });
 });

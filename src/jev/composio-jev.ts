@@ -30,14 +30,19 @@ export function crearComposioJev(config: ConfigJev, fetchFn: typeof fetch): JevC
   return {
     async evaluar(estado: EstadoJev, preguntas: PreguntasJev): Promise<EvaluacionJev> {
       const inicio = Date.now();
-      const cuerpo = await postConTimeout(fetchFn, URL_EJECUTAR, composioApiKey, {
-        connected_account_id: cuentaJev,
-        arguments: {
-          model: config.modeloComposio ?? config.modelo,
-          state: estado,
-          questions: preguntas,
+      const cuerpo = await postConTimeout(
+        fetchFn,
+        URL_EJECUTAR,
+        { "x-api-key": composioApiKey },
+        {
+          connected_account_id: cuentaJev,
+          arguments: {
+            model: config.modeloComposio ?? config.modelo,
+            state: estado,
+            questions: preguntas,
+          },
         },
-      });
+      );
       const envoltura = esObjeto(cuerpo) ? cuerpo : {};
       if (envoltura.successful === false) {
         throw new JevError("JEV_HTTP", `composio-jev: ${String(envoltura.error ?? "error")}`);

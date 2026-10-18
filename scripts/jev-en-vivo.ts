@@ -35,18 +35,24 @@ export async function ejecutar({
   fetchFn = fetch,
   imprimir = console.log,
 }: OpcionesEjecutar): Promise<number> {
-  if (env.JEV_MODE !== "composio-proxy") {
-    imprimir("JEV_MODE debe ser composio-proxy");
+  const modo = env.JEV_MODE;
+  if (modo !== "openrouter" && modo !== "composio-proxy") {
+    imprimir("JEV_MODE debe ser openrouter o composio-proxy");
     return 2;
   }
-  if (!env.COMPOSIO_API_KEY || !env.COMPOSIO_OPENROUTER_ACCOUNT_ID) {
+  if (modo === "openrouter" && !env.OPENROUTER_API_KEY) {
+    imprimir("Falta OPENROUTER_API_KEY");
+    return 3;
+  }
+  if (modo === "composio-proxy" && (!env.COMPOSIO_API_KEY || !env.COMPOSIO_OPENROUTER_ACCOUNT_ID)) {
     imprimir("Faltan COMPOSIO_API_KEY o COMPOSIO_OPENROUTER_ACCOUNT_ID");
     return 3;
   }
   const cliente = crearClienteJev(
     {
-      modo: "composio-proxy",
+      modo,
       modelo: env.JEV_MODEL || "typesafe/jev-1.14",
+      openrouterApiKey: env.OPENROUTER_API_KEY,
       composioApiKey: env.COMPOSIO_API_KEY,
       cuentaOpenrouter: env.COMPOSIO_OPENROUTER_ACCOUNT_ID,
     },

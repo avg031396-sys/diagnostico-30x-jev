@@ -5,7 +5,7 @@ import { JevError } from "./tipos.ts";
 export const TIMEOUT_MS = 8000;
 const URL_PROXY = "https://backend.composio.dev/api/v3.1/tools/execute/proxy";
 // URL absoluta a propósito: la base URL de la conexión de Composio es UNVERIFIED.
-const ENDPOINT_JEV = "https://openrouter.ai/api/alpha/decisions";
+export const ENDPOINT_JEV = "https://openrouter.ai/api/alpha/decisions";
 
 type Respuesta = Record<string, unknown>;
 
@@ -41,7 +41,7 @@ export function normalizarAnswers(answers: unknown): RespuestasJev {
 export async function postConTimeout(
   fetchFn: typeof fetch,
   url: string,
-  apiKey: string,
+  cabeceras: Record<string, string>,
   cuerpo: unknown,
 ): Promise<unknown> {
   const control = new AbortController();
@@ -49,12 +49,12 @@ export async function postConTimeout(
   try {
     const respuesta = await fetchFn(url, {
       method: "POST",
-      headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
+      headers: { ...cabeceras, "Content-Type": "application/json" },
       body: JSON.stringify(cuerpo),
       signal: control.signal,
     });
     if (!respuesta.ok) {
-      throw new JevError("JEV_HTTP", `Composio respondió HTTP ${respuesta.status}`);
+      throw new JevError("JEV_HTTP", `JEV respondió HTTP ${respuesta.status}`);
     }
     return await respuesta.json();
   } catch (error) {
@@ -78,12 +78,17 @@ export function crearProxyJev(config: ConfigJev, fetchFn: typeof fetch): JevClie
   return {
     async evaluar(estado: EstadoJev, preguntas: PreguntasJev): Promise<EvaluacionJev> {
       const inicio = Date.now();
-      const cuerpo = await postConTimeout(fetchFn, URL_PROXY, composioApiKey, {
-        connected_account_id: cuentaOpenrouter,
-        endpoint: ENDPOINT_JEV,
-        method: "POST",
-        body: { model: config.modelo, state: estado, questions: preguntas },
-      });
+      const cuerpo = await postConTimeout(
+        fetchFn,
+        URL_PROXY,
+        { "x-api-key": composioApiKey },
+        {
+          connected_account_id: cuentaOpenrouter,
+          endpoint: ENDPOINT_JEV,
+          method: "POST",
+          body: { model: config.modelo, state: estado, questions: preguntas },
+        },
+      );
       const envoltura = esObjeto(cuerpo) ? cuerpo : {};
       const status = typeof envoltura.status === "number" ? envoltura.status : 200;
       if (status < 200 || status > 299) {
