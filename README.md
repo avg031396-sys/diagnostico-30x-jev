@@ -62,6 +62,13 @@ La página [`/qa.html`](/qa.html) muestra la última corrida de calidad: los cas
 `src/data/insumos-jev.json` evaluados contra el motor, con aciertos top-1 y top-3, latencia y costo.
 En modo `mock` mide un buscador de palabras clave (hoy 29/54 en top-1 y 44/54 en top-3), no a JEV: la medición real se hace con `JEV_MODE=composio-proxy`. El script `npm run calibrar` está pendiente.
 
+## Ver los leads (solo la persona dueña de la cuenta)
+
+Los leads se guardan en la tabla `leads` de D1 y ninguna ruta pública los expone. Para verlos hay que tener sesión de Cloudflare en la cuenta dueña (`npx wrangler login`):
+
+- `npm run leads`: últimos 200 en una tabla.
+- `npm run leads:exportar`: todos a `.wrangler/leads.json` (carpeta ignorada por git).
+
 ## Revisiones
 
 Las revisiones de seguridad y de puntos ciegos se hicieron en una sola pasada al final (no por bloque) y están en `docs/revisiones/`.
