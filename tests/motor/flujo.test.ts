@@ -299,3 +299,61 @@ describe("el n.º 1 nunca es mucho menos afín que otro programa", () => {
     }
   });
 });
+
+describe("siempre hay alternativas", () => {
+  it("con un solo tema confirmado muestra al menos 3 rutas y explica las que pesan menos", () => {
+    const noul = noulBase({
+      quiere_adoptar_ia: 0.9,
+      fit_ai_for_executives: 0.91,
+      fit_operaciones_con_ai: 0.49,
+      fit_inmersion_ejecutiva: 0.42,
+      fit_planes_corporativos: 0.29,
+      fit_ai_for_developers: 0.18,
+    });
+    const salida = resolverResultado(
+      entrada({
+        respuestas: { noul, choice: { valor: "AI_for_Executives", confianza: 0.93 }, score: null },
+        etapa_nivel: 1,
+        dolores_confirmados: ["quiere_adoptar_ia"],
+        respuestas_seguimiento: {},
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      const r = salida.resultado;
+      expect(r.programa_top?.id).toBe("AI_for_Executives");
+      expect(r.ranking.length).toBeGreaterThanOrEqual(3);
+      expect(r.ranking.map((f) => f.id)).toContain("Operaciones_con_AI");
+      const ops = r.ranking.find((f) => f.id === "Operaciones_con_AI");
+      expect(ops?.nota).toContain("no lo marcaste");
+    }
+  });
+});
+
+describe("alternativas según el perfil", () => {
+  it("a un fundador no le sugiere Next ni Planes Corporativos", () => {
+    const noul = noulBase({
+      quiere_adoptar_ia: 0.9,
+      fit_ai_for_executives: 0.91,
+      fit_planes_corporativos: 0.45,
+      fit_next: 0.42,
+      fit_operaciones_con_ai: 0.49,
+    });
+    const salida = resolverResultado(
+      entrada({
+        respuestas: { noul, choice: { valor: "AI_for_Executives", confianza: 0.9 }, score: null },
+        dolores_confirmados: ["quiere_adoptar_ia"],
+        respuestas_seguimiento: {},
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      const ids = salida.resultado.ranking.map((f) => f.id);
+      expect(ids).not.toContain("Next");
+      expect(ids).not.toContain("Planes_Corporativos");
+      expect(ids[0]).toBe("Operaciones_con_AI");
+    }
+  });
+});

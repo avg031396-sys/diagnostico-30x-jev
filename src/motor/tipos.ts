@@ -40,6 +40,8 @@ export type FilaVisible = {
   condicion_pendiente: string | null;
   // Dolores confirmados de la persona que apuntan a este programa (por familia).
   motivos?: string[];
+  // Aviso cuando la afinidad bajó por ser de un tema que la persona no confirmó.
+  nota?: string;
 };
 
 export type ResultadoMotor = {

@@ -169,7 +169,30 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
       return chip && familias.includes(chip.familia) ? [chip.etiqueta] : [];
     });
   };
-  const conMotivos = (f: FilaRanking) => ({ ...aFilaVisible(f), motivos: motivosDe(f.programa) });
+  const conMotivos = (f: FilaRanking) => ({
+    ...aFilaVisible(f),
+    motivos: motivosDe(f.programa),
+    ...(f.fit < f.fit_jev
+      ? { nota: "aparece en tu reto, pero no lo marcaste como tema principal" }
+      : {}),
+  });
+  // Siempre al menos 3 alternativas: si las visibles no alcanzan, se completan con las
+  // siguientes más afines (aunque estén bajo el umbral de mostrar).
+  // Next y Planes Corporativos dependen del perfil: si no corresponde, nunca son alternativa.
+  const posible = (f: FilaRanking) =>
+    (f.programa !== "Next" || perfil === "padre_madre_next") &&
+    (f.programa !== "Planes_Corporativos" || perfil === "corporativo");
+  const MIN_ALTERNATIVAS = 3;
+  const alternativas = vis.filter((f) => f !== top && posible(f));
+  const relleno = [...filas].filter(posible).sort((a, b) => b.fit_jev - a.fit_jev);
+  for (const f of relleno) {
+    if (alternativas.length >= MIN_ALTERNATIVAS) {
+      break;
+    }
+    if (f !== top && !alternativas.includes(f) && f.fit_jev >= 0.15) {
+      alternativas.push(f);
+    }
+  }
   const tipo = !top ? "conversacion" : requiereRevision ? "preliminar" : "recomendado";
   const etiquetas = new Map<string, string>(DOLORES_CHIP.map((d) => [d.id, d.etiqueta]));
 
@@ -180,7 +203,7 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
       tipo,
       programa_top: top ? conMotivos(top) : null,
       requiere_revision: requiereRevision,
-      ranking: vis.filter((f) => f !== top).map(conMotivos),
+      ranking: alternativas.map(conMotivos),
       cercanos: cerca.cercanos,
       motivo_top: cerca.motivo,
       familias: valoresFamilias(respuestas.noul),

@@ -9,6 +9,7 @@ export type FilaPrograma = {
   cumple_requisito: boolean;
   condicion_pendiente: string | null;
   motivos?: string[];
+  nota?: string;
 };
 
 export type ResultadoPublico = {
@@ -49,7 +50,9 @@ function rutaFila(f: FilaPrograma, razonCercana?: string): HTMLElement {
     el("p", { class: "leyenda" }, [
       motivos.length > 0
         ? `Por qué suma: mencionaste ${motivos.join(", ").toLowerCase()}.`
-        : "Por qué suma: coincide con lo que describiste en tu reto.",
+        : f.nota
+          ? `Por qué suma: ${f.nota}.`
+          : "Por qué suma: coincide con lo que describiste en tu reto.",
     ]),
   );
   lineas.push(
@@ -181,7 +184,9 @@ export function renderResultado(
     el("div", { class: "ruta" }, [
       el("strong", {}, ["Clases gratuitas de 30X"]),
       el("p", { class: "leyenda" }, [
-        "Mientras cumples los requisitos de tu ruta, puedes empezar con las clases gratuitas.",
+        top.cumple_requisito
+          ? "¿Quieres conocer el estilo de 30X antes de decidir? Empieza con las clases gratuitas."
+          : "Mientras cumples los requisitos de tu ruta, puedes empezar con las clases gratuitas.",
       ]),
     ]),
   );
