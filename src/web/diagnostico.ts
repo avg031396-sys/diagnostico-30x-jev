@@ -2,9 +2,11 @@ import { ETAPAS, PERFILES } from "../motor/catalogo.ts";
 import { anunciar, api, el, medidor, pantallaError, transicion } from "./comun.ts";
 import type { RespuestaCreacion } from "./confirmacion.ts";
 import { mostrarConfirmacion } from "./confirmacion.ts";
+import type { Contacto } from "./contacto.ts";
+import { campo, pasoContacto } from "./contacto.ts";
 
 type Estado = {
-  contacto: { nombre: string; email: string; whatsapp: string; empresa: string };
+  contacto: Contacto;
   perfil: string;
   etapa: string;
   edad_hijo: number | null;
@@ -25,91 +27,12 @@ const EJEMPLOS = [
   "Quiero que mi equipo adopte inteligencia artificial y no sé por dónde empezar ni cómo medirlo.",
 ];
 
-function campo(id: string, etiqueta: string, tipo: string, valor: string) {
-  const error = el("span", { class: "campo__error", id: `${id}-error` });
-  const input = el("input", {
-    id,
-    name: id,
-    type: tipo,
-    value: valor,
-    "aria-describedby": `${id}-error`,
-    autocomplete: tipo === "email" ? "email" : tipo === "tel" ? "tel" : "off",
-  });
-  return {
-    input,
-    error,
-    nodo: el("div", { class: "campo" }, [el("label", { for: id }, [etiqueta]), input, error]),
-  };
-}
-
-function pasoContacto(contenedor: HTMLElement): void {
-  medidor(0, 5);
-  transicion(contenedor, () => {
-    const nombre = campo("nombre", "Nombre", "text", estado.contacto.nombre);
-    const email = campo("email", "Correo", "email", estado.contacto.email);
-    const whatsapp = campo("whatsapp", "WhatsApp", "tel", estado.contacto.whatsapp);
-    const empresa = campo("empresa", "Empresa (opcional)", "text", estado.contacto.empresa);
-    const acepto = el("input", {
-      type: "checkbox",
-      id: "consentimiento",
-      "aria-describedby": "consentimiento-error",
-    });
-    const errorAcepto = el("span", { class: "campo__error", id: "consentimiento-error" });
-    const form = el("form", { novalidate: true, class: "pila" }, [
-      el("h1", {}, ["Diagnóstico 30X con ", el("em", { class: "acento" }, ["JEV"])]),
-      el("p", {}, ["Cuéntanos tu reto con tus palabras y JEV decide el programa de 30X más afín."]),
-      el("h2", {}, ["Antes de empezar"]),
-      nombre.nodo,
-      email.nodo,
-      whatsapp.nodo,
-      empresa.nodo,
-      el("div", { class: "consentimiento" }, [
-        acepto,
-        el("label", { for: "consentimiento" }, [
-          "Acepto que guarden mis datos para recibir mi diagnóstico (lee el ",
-          el(
-            "a",
-            { href: "/privacidad.html", class: "enlace", target: "_blank", rel: "noopener" },
-            ["aviso de privacidad"],
-          ),
-          ")",
-        ]),
-      ]),
-      errorAcepto,
-      el("button", { type: "submit", class: "boton boton--primario" }, ["Empezar"]),
-    ]);
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const n = nombre.input.value.trim();
-      const c = email.input.value.trim();
-      const w = whatsapp.input.value.trim();
-      nombre.error.textContent = n.length >= 2 ? "" : "Escribe tu nombre.";
-      email.error.textContent = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)
-        ? ""
-        : "Escribe un correo válido.";
-      whatsapp.error.textContent = /^\+?[0-9 ()-]{7,20}$/.test(w)
-        ? ""
-        : "Escribe un WhatsApp válido, solo números.";
-      errorAcepto.textContent = acepto.checked ? "" : "Necesitamos tu autorización para continuar.";
-      if (
-        nombre.error.textContent ||
-        email.error.textContent ||
-        whatsapp.error.textContent ||
-        errorAcepto.textContent
-      ) {
-        return;
-      }
-      estado.contacto = { nombre: n, email: c, whatsapp: w, empresa: empresa.input.value.trim() };
-      pasoPerfil(contenedor);
-    });
-    contenedor.append(form);
-  });
-}
-
 function pasoPerfil(contenedor: HTMLElement): void {
   medidor(1, 5);
   transicion(contenedor, () => {
     contenedor.append(
+      el("h1", {}, ["Diagnóstico 30X con ", el("em", { class: "acento" }, ["JEV"])]),
+      el("p", {}, ["Cuéntanos tu reto con tus palabras y JEV decide el programa de 30X más afín."]),
       el("h2", {}, ["¿Cuál es tu punto de partida?"]),
       el(
         "div",
@@ -201,7 +124,7 @@ function pasoReto(contenedor: HTMLElement): void {
     const enviar = el(
       "button",
       { type: "button", class: "boton boton--primario", disabled: true },
-      ["Analizar mi reto"],
+      ["Continuar"],
     );
     const actualizar = () => {
       const n = area.value.length;
@@ -211,7 +134,10 @@ function pasoReto(contenedor: HTMLElement): void {
     area.addEventListener("input", actualizar);
     enviar.addEventListener("click", () => {
       estado.reto = area.value.trim();
-      enviarReto(contenedor);
+      pasoContacto(contenedor, estado.contacto, (contacto) => {
+        estado.contacto = contacto;
+        enviarReto(contenedor);
+      });
     });
     contenedor.append(
       el("div", { class: "pila" }, [
@@ -311,7 +237,7 @@ export function iniciar(): void {
     ]),
     paso,
   );
-  pasoContacto(paso);
+  pasoPerfil(paso);
 }
 
 iniciar();
