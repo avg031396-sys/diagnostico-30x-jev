@@ -408,3 +408,7 @@ h3 {
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+main > section {
+  margin-top: var(--espacio-8);
+}
