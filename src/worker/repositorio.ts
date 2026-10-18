@@ -210,3 +210,32 @@ export async function obtenerResultado(db: D1Database, id: string): Promise<Fila
     .bind(id)
     .first<FilaResultado>();
 }
+
+export type FilaLeadVentas = {
+  created_at: string;
+  nombre: string;
+  email: string;
+  whatsapp: string;
+  empresa: string | null;
+  perfil: string;
+  etapa: string | null;
+  estado: string;
+  programa_top: string | null;
+  fit_top: number | null;
+  confianza_choice: number | null;
+  requiere_revision: number;
+  quiere_asesor: number;
+};
+
+// Solo para la vista de ventas protegida con LEADS_TOKEN (src/worker/leads.ts).
+export async function listarLeads(db: D1Database, limite: number): Promise<FilaLeadVentas[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT created_at, nombre, email, whatsapp, empresa, perfil, etapa, estado, programa_top,
+        fit_top, confianza_choice, requiere_revision, quiere_asesor
+       FROM leads ORDER BY created_at DESC LIMIT ?`,
+    )
+    .bind(limite)
+    .all<FilaLeadVentas>();
+  return results;
+}

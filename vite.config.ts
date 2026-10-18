@@ -16,6 +16,7 @@ export default defineConfig({
         resultado: pagina("resultado.html"),
         qa: pagina("qa.html"),
         privacidad: pagina("privacidad.html"),
+        leads: pagina("leads.html"),
         "404": pagina("404.html"),
       },
     },

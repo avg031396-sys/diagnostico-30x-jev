@@ -2,6 +2,7 @@
 # Deja JEV_MODE=mock. Para una prueba en vivo usa: JEV_MODE=openrouter npm run jev:vivo
 JEV_MODE=mock
 QA_TOKEN=token-e2e-local
+LEADS_TOKEN=token-leads-local
 OPENROUTER_API_KEY=pon-aqui-tu-clave-de-openrouter
 COMPOSIO_API_KEY=pon-aqui-tu-clave-de-composio
 COMPOSIO_OPENROUTER_ACCOUNT_ID=pon-aqui-el-connected-account-id-de-openrouter

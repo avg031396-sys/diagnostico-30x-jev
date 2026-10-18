@@ -28,7 +28,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      "npm run build && npm run db:migrar && npx wrangler dev --ip 127.0.0.1 --port 8787 --var JEV_MODE:mock --var LIMITE_ACTIVO:0 --var QA_TOKEN:token-e2e-local --show-interactive-dev-session=false",
+      "npm run build && npm run db:migrar && npx wrangler dev --ip 127.0.0.1 --port 8787 --var JEV_MODE:mock --var LIMITE_ACTIVO:0 --var QA_TOKEN:token-e2e-local --var LEADS_TOKEN:token-leads-local --show-interactive-dev-session=false",
     url: `${ORIGEN}/api/salud`,
     reuseExistingServer: false,
     timeout: 180_000,

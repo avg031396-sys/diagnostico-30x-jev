@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Leads calificados · Diagnóstico 30X</title>
+    <meta name="description" content="Vista privada de leads para el equipo comercial." />
+  </head>
+  <body>
+    <main id="contenido">
+      <h1>Leads calificados</h1>
+      <p class="suave">Vista privada para el equipo comercial. El token no se guarda en el navegador.</p>
+      <form id="form-leads" class="pila" novalidate>
+        <div class="campo">
+          <label for="leads-token">Token</label>
+          <input id="leads-token" name="token" type="password" autocomplete="off" required />
+        </div>
+        <button type="submit" class="boton boton--primario">Ver leads</button>
+      </form>
+      <p id="leads-estado" class="suave" aria-live="polite"></p>
+      <div id="leads-tabla"></div>
+    </main>
+    <footer>
+      <p>Prototipo para el Hackatón 30X · no oficial · código abierto en <a href="https://github.com/avg031396-sys/diagnostico-30x-jev">GitHub</a></p>
+    </footer>
+    <script type="module" src="/src/web/leads.ts"></script>
+  </body>
+</html>
