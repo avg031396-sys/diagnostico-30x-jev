@@ -160,6 +160,14 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
     (respuestas.noul.datos_incoherentes ?? 0) > 0.5;
 
   const cerca = top ? cercanosDe(top, vis, choice?.valor ?? null) : { cercanos: [], motivo: "" };
+  const motivosDe = (id: IdPrograma): string[] => {
+    const familias = programaPorId(id).familias as readonly string[];
+    return entrada.dolores_confirmados.flatMap((d) => {
+      const chip = DOLORES_CHIP.find((c) => c.id === d);
+      return chip && familias.includes(chip.familia) ? [chip.etiqueta] : [];
+    });
+  };
+  const conMotivos = (f: FilaRanking) => ({ ...aFilaVisible(f), motivos: motivosDe(f.programa) });
   const tipo = !top ? "conversacion" : requiereRevision ? "preliminar" : "recomendado";
   const etiquetas = new Map<string, string>(DOLORES_CHIP.map((d) => [d.id, d.etiqueta]));
 
@@ -168,9 +176,9 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
     confianza_choice: choice?.confianza ?? null,
     resultado: {
       tipo,
-      programa_top: top ? aFilaVisible(top) : null,
+      programa_top: top ? conMotivos(top) : null,
       requiere_revision: requiereRevision,
-      ranking: vis.filter((f) => f !== top).map(aFilaVisible),
+      ranking: vis.filter((f) => f !== top).map(conMotivos),
       cercanos: cerca.cercanos,
       motivo_top: cerca.motivo,
       familias: valoresFamilias(respuestas.noul),

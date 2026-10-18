@@ -38,6 +38,8 @@ export type FilaVisible = {
   etiqueta: Etiqueta | null;
   cumple_requisito: boolean;
   condicion_pendiente: string | null;
+  // Dolores confirmados de la persona que apuntan a este programa (por familia).
+  motivos?: string[];
 };
 
 export type ResultadoMotor = {

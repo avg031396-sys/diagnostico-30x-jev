@@ -8,6 +8,7 @@ export type FilaPrograma = {
   etiqueta: string | null;
   cumple_requisito: boolean;
   condicion_pendiente: string | null;
+  motivos?: string[];
 };
 
 export type ResultadoPublico = {
@@ -23,6 +24,7 @@ export type ResultadoPublico = {
 };
 
 const URL_PROGRAMAS = "https://30x.com/programas";
+const URL_CLASES = "https://30x.com";
 const porcentaje = (fit: number) => `${Math.round(fit * 100)}%`;
 
 function barra(nombre: string, fit: number, leyenda?: string): HTMLElement {
@@ -37,6 +39,34 @@ function barra(nombre: string, fit: number, leyenda?: string): HTMLElement {
     nodos.push(el("span", { class: "leyenda" }, [leyenda]));
   }
   return el("div", { class: "barra" }, nodos);
+}
+
+// Una ruta: porcentaje, por qué suma y qué le falta para cumplir ese camino.
+function rutaFila(f: FilaPrograma, razonCercana?: string): HTMLElement {
+  const lineas: Node[] = [];
+  const motivos = f.motivos ?? [];
+  lineas.push(
+    el("p", { class: "leyenda" }, [
+      motivos.length > 0
+        ? `Por qué suma: mencionaste ${motivos.join(", ").toLowerCase()}.`
+        : "Por qué suma: coincide con lo que describiste en tu reto.",
+    ]),
+  );
+  lineas.push(
+    el("p", { class: "leyenda" }, [
+      f.cumple_requisito
+        ? "Qué te falta: nada, ya cumples el requisito de este camino."
+        : `Qué te falta: ${f.condicion_pendiente ?? "cumplir el requisito"}.`,
+    ]),
+  );
+  if (
+    razonCercana &&
+    f.cumple_requisito &&
+    !/^(JEV|tus respuestas de seguimiento)/.test(razonCercana)
+  ) {
+    lineas.push(el("p", { class: "leyenda" }, [`Casi igual de fuerte: ${razonCercana}.`]));
+  }
+  return el("div", { class: "ruta" }, [barra(f.nombre, f.fit), ...lineas]);
 }
 
 function botonAsesor(token: string, principal: boolean, estado: HTMLElement): HTMLElement {
@@ -129,50 +159,41 @@ export function renderResultado(
       ),
     );
   }
+  if (r.motivo_top) {
+    tarjeta.append(el("p", { class: "suave" }, [r.motivo_top]));
+  }
+
+  // Las demás rutas van dentro de la tarjeta (es lo que se descarga como imagen).
+  const cercanos = new Map(r.cercanos.map((c) => [c.id, c.razon]));
+  if (r.ranking.length > 0) {
+    tarjeta.append(
+      el("h2", {}, ["Tus otras rutas"]),
+      ...r.ranking.map((f) => rutaFila(f, cercanos.get(f.id))),
+    );
+  }
   tarjeta.append(
+    el("div", { class: "ruta" }, [
+      el("strong", {}, ["Clases gratuitas de 30X"]),
+      el("p", { class: "leyenda" }, [
+        "Mientras cumples los requisitos de tu ruta, puedes empezar con las clases gratuitas.",
+      ]),
+    ]),
+  );
+  contenedor.append(tarjeta);
+  contenedor.append(
     el(
       "div",
       { class: "fila" },
-      (preliminar ? [botonAse, conocer] : [conocer, botonAse]).filter(
-        (n): n is HTMLElement => n !== null,
-      ),
+      [
+        ...(preliminar ? [botonAse, conocer] : [conocer, botonAse]),
+        el(
+          "a",
+          { class: "boton boton--secundario", href: URL_CLASES, target: "_blank", rel: "noopener" },
+          ["Ver clases gratuitas"],
+        ),
+      ].filter((n): n is HTMLElement => n !== null),
     ),
     estado,
-  );
-  contenedor.append(tarjeta);
-
-  if (r.cercanos.length > 0) {
-    contenedor.append(
-      el("section", { class: "pila" }, [
-        el("h2", {}, ["Rutas casi igual de fuertes (a 10 puntos o menos)"]),
-        el("p", {}, [r.motivo_top]),
-        ...r.cercanos.map((f) => barra(f.nombre, f.fit, f.razon)),
-      ]),
-    );
-  }
-  const cercanosIds = new Set(r.cercanos.map((c) => c.id));
-  const otros = r.ranking.filter((f) => !cercanosIds.has(f.id));
-  if (otros.length > 0) {
-    contenedor.append(
-      el("section", { class: "pila" }, [
-        el("h2", {}, ["Otras rutas que podrían servirte"]),
-        ...otros.map((f) =>
-          barra(
-            f.nombre,
-            f.fit,
-            f.cumple_requisito
-              ? undefined
-              : `tu reto coincide, pero aún no cumples: ${f.condicion_pendiente ?? ""}`,
-          ),
-        ),
-      ]),
-    );
-  }
-  contenedor.append(
-    el("section", { class: "pila" }, [
-      el("h2", {}, ["Qué tanto pesa cada tema en tu reto"]),
-      ...r.familias.map((f) => barra(f.nombre, f.valor)),
-    ]),
   );
   return tarjeta;
 }

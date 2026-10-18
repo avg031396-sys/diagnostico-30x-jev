@@ -14,9 +14,11 @@ test("resultado recomendado, escala, asesor y compartir", async ({ page, context
   await expect(page.locator(".circulo")).toContainText("85%");
   await expect(page.locator(".circulo")).toContainText("Muy recomendado");
   await expect(page.getByText("Te lo recomendamos porque mencionaste:")).toBeVisible();
-  await expect(page.getByText("Pocas ventas")).toBeVisible();
-  await expect(page.getByText("Qué tanto pesa cada tema en tu reto")).toBeVisible();
-  await expect(page.locator("section:has(h2:text('Qué tanto pesa')) .barra")).toHaveCount(6);
+  await expect(page.getByText("Pocas ventas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Tus otras rutas")).toBeVisible();
+  await expect(page.getByText("Por qué suma").first()).toBeVisible();
+  await expect(page.getByText("Qué te falta").first()).toBeVisible();
+  await expect(page.getByText("Clases gratuitas de 30X")).toBeVisible();
   await expect(page.getByRole("link", { name: "Conocer Sales Machine" })).toHaveAttribute(
     "href",
     "https://30x.com/programas/sales-machine",
