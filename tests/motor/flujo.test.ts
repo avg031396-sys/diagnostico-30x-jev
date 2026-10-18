@@ -249,3 +249,53 @@ describe("empate entre familias distintas", () => {
     }
   });
 });
+
+describe("el n.º 1 nunca es mucho menos afín que otro programa", () => {
+  it("con Sales Machine en 0.87 sin requisito y Growth en 0.48, el n.º 1 es Sales Machine", () => {
+    const noul = noulBase({
+      bloqueo_comercial: 0.85,
+      dolor_growth: 0.85,
+      fit_sales_machine: 0.87,
+      fit_growth_rockstar: 0.48,
+    });
+    const salida = resolverResultado(
+      entrada({
+        respuestas: { noul, choice: { valor: "Sales_Machine", confianza: 0.8 }, score: null },
+        etapa_nivel: 0,
+        dolores_confirmados: ["bloqueo_comercial", "dolor_growth"],
+        respuestas_seguimiento: { rol_growth: "ejecuto" },
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      const r = salida.resultado;
+      expect(r.programa_top?.id).toBe("Sales_Machine");
+      expect(r.programa_top?.cumple_requisito).toBe(false);
+      expect(r.programa_top?.condicion_pendiente).toContain("factura");
+      expect(r.tipo).toBe("preliminar");
+      expect(r.motivo_top).toBe("");
+    }
+  });
+
+  it("una respuesta de seguimiento desempata pero no salta una brecha grande", () => {
+    const noul = noulBase({
+      bloqueo_comercial: 0.85,
+      dolor_growth: 0.85,
+      fit_sales_machine: 0.85,
+      fit_growth_rockstar: 0.5,
+    });
+    const salida = resolverResultado(
+      entrada({
+        respuestas: { noul, choice: { valor: "Sales_Machine", confianza: 0.8 }, score: null },
+        dolores_confirmados: ["bloqueo_comercial", "dolor_growth"],
+        respuestas_seguimiento: { rol_growth: "ejecuto" },
+      }),
+      umbrales,
+    );
+    expect(salida.pendiente).toBe(false);
+    if (!salida.pendiente) {
+      expect(salida.resultado.programa_top?.id).toBe("Sales_Machine");
+    }
+  });
+});

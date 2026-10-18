@@ -71,7 +71,7 @@ function cercanosDe(
       return { id: f.programa, nombre: p.nombre, url: p.url, fit: f.fit, razon };
     });
   let motivo = "";
-  if (cercanos.length > 0) {
+  if (cercanos.length > 0 && top.cumple) {
     motivo =
       choice === top.programa
         ? `Hay rutas casi igual de fuertes. JEV, leyendo tu reto completo, se inclinó por ${nombreTop}.`
@@ -88,7 +88,9 @@ function elegirTop(filas: FilaRanking[], umbrales: Umbrales) {
     return { top: recomendable, hayRecomendable: true };
   }
   const vis = visibles(filas, umbrales);
-  return { top: vis.find((f) => f.cumple) ?? vis[0] ?? null, hayRecomendable: false };
+  // Nadie llega a recomendable: el n.º 1 es el más afín aunque le falte el requisito
+  // (se muestra lo que le falta y se ofrecen las clases gratuitas), nunca uno mucho más bajo.
+  return { top: vis[0] ?? null, hayRecomendable: false };
 }
 
 export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales): SalidaResultado {

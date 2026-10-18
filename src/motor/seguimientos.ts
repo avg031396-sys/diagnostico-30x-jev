@@ -177,7 +177,7 @@ export function efectosDeSeguimiento(
   // La familia elegida como más urgente sube completa (dentro de ella manda el fit).
   const urgente = FAMILIAS.find((f) => f.id === respuestas.prioridad);
   for (const id of urgente?.programas ?? []) {
-    sumar(id, 1);
+    sumar(id, 2);
   }
   if (respuestas.formato === "presencial") {
     sumar("Inmersion_Ejecutiva", 1);

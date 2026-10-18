@@ -19,6 +19,13 @@ export function fitsDesdeNoul(noul: Record<string, number>): Record<IdPrograma, 
   return fits;
 }
 
+// Las respuestas de seguimiento solo desempatan: cada punto de prioridad vale 0.10 de fit,
+// así que nunca saltan una brecha grande. Prioridad 3 o más (regla NEXT) manda siempre.
+const PESO_PRIORIDAD = 0.1;
+function clave(f: FilaRanking): number {
+  return f.prioridad >= 3 ? 10 + f.fit : f.fit + PESO_PRIORIDAD * f.prioridad;
+}
+
 export function calcularRanking(
   fits: Record<IdPrograma, number>,
   opciones: OpcionesRanking,
@@ -44,9 +51,7 @@ export function calcularRanking(
     };
     return { indice, fila };
   });
-  filas.sort(
-    (a, b) => b.fila.prioridad - a.fila.prioridad || b.fila.fit - a.fila.fit || a.indice - b.indice,
-  );
+  filas.sort((a, b) => clave(b.fila) - clave(a.fila) || a.indice - b.indice);
   return filas.map((f) => f.fila);
 }
 

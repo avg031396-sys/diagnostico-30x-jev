@@ -146,7 +146,13 @@ export function renderResultado(
       el("small", {}, [top.etiqueta ?? ""]),
     ]),
   );
-  if (preliminar) {
+  if (!top.cumple_requisito) {
+    tarjeta.append(
+      el("p", {}, [
+        `Tu reto encaja con ${top.nombre}, pero aún te falta: ${top.condicion_pendiente ?? "cumplir el requisito"}. Mientras tanto, empieza con las clases gratuitas de 30X.`,
+      ]),
+    );
+  } else if (preliminar) {
     tarjeta.append(el("p", {}, ["Un asesor de 30X confirma tu ruta"]));
   }
   if (r.chips.length > 0) {
