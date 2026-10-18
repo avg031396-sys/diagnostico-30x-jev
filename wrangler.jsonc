@@ -20,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "diagnostico-30x-jev",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "9c7ba82f-99ff-4213-b5f5-4167abc5b3e9",
       "migrations_dir": "migrations"
     }
   ],

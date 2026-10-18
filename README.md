@@ -22,8 +22,7 @@ Nada personal viaja a JEV: solo el texto del reto, el perfil y la etapa.
 
 ## Demo
 
-La URL pública se agrega al desplegar (ver la lista de lanzamiento en
-`blueprints/diagnostico-30x-jev/blueprint.md`, sección 20.1).
+Demo en vivo (modo mock): <https://diagnostico-30x-jev.alo-finanzas.workers.dev>
 
 ## Correr local en modo mock
 
