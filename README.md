@@ -61,7 +61,11 @@ El modelo está fijado en `typesafe/jev-1.14` (nunca un alias `latest`). Hay un 
 
 La página [`/qa.html`](/qa.html) muestra la última corrida de calidad: los casos de prueba de
 `src/data/insumos-jev.json` evaluados contra el motor, con aciertos top-1 y top-3, latencia y costo.
-Una meta de acierto es una referencia, no una promesa: los umbrales se recalibran con `npm run calibrar`.
+En modo `mock` mide un buscador de palabras clave (hoy 29/54 en top-1 y 44/54 en top-3), no a JEV: la medición real se hace con `JEV_MODE=composio-proxy`. El script `npm run calibrar` está pendiente.
+
+## Revisiones
+
+Las revisiones de seguridad y de puntos ciegos se hicieron en una sola pasada al final (no por bloque) y están en `docs/revisiones/`.
 
 ## Privacidad y seguridad
 
