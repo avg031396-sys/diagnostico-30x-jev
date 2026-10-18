@@ -8,6 +8,7 @@ import {
   primerRecomendable,
   visibles,
 } from "./ranking.ts";
+import { aplicaReglaInmersion } from "./reglas.ts";
 import { efectosDeSeguimiento, elegirSeguimientos } from "./seguimientos.ts";
 import type {
   ContextoRequisitos,
@@ -134,6 +135,18 @@ export function resolverResultado(entrada: EntradaResultado, umbrales: Umbrales)
       umbrales,
     );
     prioridades = sumarPrioridades(prioridades, efectos.prioridades);
+    // Regla Inmersión: prioridad 3 manda (como NEXT); el formato online la sigue bloqueando.
+    if (
+      aplicaReglaInmersion({
+        perfil,
+        etapa_nivel,
+        facturacion: efectos.facturacion,
+        noul: respuestas.noul,
+      })
+    ) {
+      prioridades = sumarPrioridades(prioridades, { Inmersion_Ejecutiva: 3 });
+      fits.Inmersion_Ejecutiva = Math.max(fits.Inmersion_Ejecutiva, umbrales.umbral_recomendar);
+    }
     degradados = efectos.degradados;
     bloqueadosComoTop = efectos.bloqueadosComoTop;
     filas = calcularRanking(
