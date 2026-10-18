@@ -22,7 +22,7 @@ Nada personal viaja a JEV: solo el texto del reto, el perfil y la etapa.
 
 ## Demo
 
-Demo en vivo (modo mock): <https://diagnostico-30x-jev.alo-finanzas.workers.dev>
+Demo en vivo, con JEV real (`typesafe/jev-1.14` vía OpenRouter): <https://diagnostico-30x-jev.alo-finanzas.workers.dev>
 
 ## Correr local en modo mock
 
@@ -45,6 +45,8 @@ Compuerta de calidad: `npm run typecheck && npm run lint && npm test && npm run 
 
 ## Conectar JEV
 
+Modo de producción actual: `JEV_MODE=openrouter`, llamada directa a OpenRouter con `OPENROUTER_API_KEY` (en `.dev.vars` local o con `npx wrangler secret put OPENROUTER_API_KEY`). Prueba de una sola llamada: `JEV_MODE=openrouter npm run jev:vivo`. Alternativa con Composio:
+
 El camino de producción es Composio con el permiso **Proxy execute** hacia la conexión de OpenRouter:
 
 1. Crea una clave de API en Composio con permiso «Proxy execute» y anota el `connected_account_id`
@@ -60,7 +62,7 @@ El modelo está fijado en `typesafe/jev-1.14` (nunca un alias `latest`). Hay un 
 
 La página [`/qa.html`](/qa.html) muestra la última corrida de calidad: los casos de prueba de
 `src/data/insumos-jev.json` evaluados contra el motor, con aciertos top-1 y top-3, latencia y costo.
-En modo `mock` mide un buscador de palabras clave (hoy 29/54 en top-1 y 44/54 en top-3), no a JEV: la medición real se hace con `JEV_MODE=composio-proxy`. El script `npm run calibrar` está pendiente.
+Última corrida con JEV real (18 oct 2026): **46/54 en top-1 (85 %) y 52/54 en top-3 (96 %)**, latencia p50 408 ms y p95 1401 ms, costo total USD 0.0073 por los 60 casos. Como referencia, el modo `mock` (buscador de palabras clave) logra 29/54 y 44/54. El script `npm run calibrar` está pendiente.
 
 ## Ver los leads (solo la persona dueña de la cuenta)
 

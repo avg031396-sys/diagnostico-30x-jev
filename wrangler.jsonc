@@ -34,7 +34,7 @@
   // Secretos (nunca aquí): COMPOSIO_API_KEY, COMPOSIO_OPENROUTER_ACCOUNT_ID,
   // COMPOSIO_JEV_ACCOUNT_ID (opcional), QA_TOKEN. Local: .dev.vars. Producción: wrangler secret put.
   "vars": {
-    "JEV_MODE": "mock",
+    "JEV_MODE": "openrouter",
     "JEV_MODEL": "typesafe/jev-1.14",
     "LIMITE_ACTIVO": "1"
   },
