@@ -60,18 +60,23 @@ describe("dolores", () => {
 });
 
 describe("resolverResultado", () => {
-  it("devuelve seguimientos pendientes (cliente y reuniones, máx. 2)", () => {
+  it("devuelve el seguimiento de ventas pendiente (una sola pregunta)", () => {
     const salida = resolverResultado(entrada(), umbrales);
     expect(salida.pendiente).toBe(true);
     if (salida.pendiente) {
-      expect(salida.seguimientos.map((p) => p.id)).toEqual(["cliente", "reuniones"]);
-      expect(salida.seguimientos[1]?.solo_si).toEqual({ cliente: "b2b" });
+      expect(salida.seguimientos.map((p) => p.id)).toEqual(["reto_ventas"]);
+      expect(salida.seguimientos[0]?.opciones.map((o) => o.id)).toEqual([
+        "sin_proceso",
+        "referidos",
+        "automatizar",
+        "redes",
+      ]);
     }
   });
 
   it("con el seguimiento respondido recomienda Sales_Machine sin revisión", () => {
     const salida = resolverResultado(
-      entrada({ respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" } }),
+      entrada({ respuestas_seguimiento: { reto_ventas: "sin_proceso" } }),
       umbrales,
     );
     expect(salida.pendiente).toBe(false);
@@ -83,7 +88,7 @@ describe("resolverResultado", () => {
   });
 
   it("marca preliminar con confianza baja, Choice distinto o datos incoherentes", () => {
-    const seg = { cliente: "b2b", reuniones: "menos_20" };
+    const seg = { reto_ventas: "sin_proceso" };
     const casos = [
       { choice: { valor: "Sales_Machine", confianza: 0.4 }, extra: {} as Record<string, number> },
       { choice: { valor: "LinkedIn_Sales", confianza: 0.9 }, extra: {} as Record<string, number> },
@@ -196,7 +201,7 @@ describe("rutas casi igual de fuertes", () => {
 
   it("sin rutas cercanas no hay explicación", () => {
     const salida = resolverResultado(
-      entrada({ respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" } }),
+      entrada({ respuestas_seguimiento: { reto_ventas: "sin_proceso" } }),
       umbrales,
     );
     expect(salida.pendiente).toBe(false);

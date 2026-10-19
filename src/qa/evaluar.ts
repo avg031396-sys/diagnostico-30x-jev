@@ -54,9 +54,13 @@ export function respuestasAutomaticas(caso: CasoPrueba): Record<string, string> 
   if (caso.estado.rango_facturacion_anual_usd) {
     r.facturacion = caso.estado.rango_facturacion_anual_usd;
   }
-  if (typeof caso.estado.reuniones_venta_semana === "number") {
-    r.cliente = "b2b";
-    r.reuniones = caso.estado.reuniones_venta_semana < 20 ? "menos_20" : "20_o_mas";
+  // Los casos solo traen reuniones por semana: menos de 20 es vender sin proceso (umbral de
+  // Andrés). Con 20 o más el caso no dice cuál es su reto de ventas y no se responde.
+  if (
+    typeof caso.estado.reuniones_venta_semana === "number" &&
+    caso.estado.reuniones_venta_semana < 20
+  ) {
+    r.reto_ventas = "sin_proceso";
   }
   return r;
 }

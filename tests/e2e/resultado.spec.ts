@@ -6,8 +6,7 @@ test("resultado recomendado, escala, asesor y compartir", async ({ page, context
   const correo = await llenarContacto(page);
   await enviarReto(page, RETO_VENTAS);
   await page.getByRole("button", { name: "Confirmar" }).click();
-  await page.getByRole("button", { name: "A empresas" }).click();
-  await page.getByRole("button", { name: "Menos de 20" }).click();
+  await page.getByRole("button", { name: "No tengo un proceso de ventas ordenado" }).click();
   await page.waitForURL(/\/r\/[0-9A-Za-z]{10}$/);
 
   await expect(page.getByText("Alonso, tu programa es Sales Machine")).toBeVisible();

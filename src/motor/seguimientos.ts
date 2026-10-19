@@ -160,6 +160,13 @@ export type EfectosSeguimiento = {
 
 const FACTURACIONES = new Set(["<100k", "100k-1M", "1M-20M", ">20M"]);
 
+const VENTAS_POR_RETO: Partial<Record<string, IdPrograma>> = {
+  sin_proceso: "Sales_Machine",
+  referidos: "LinkedIn_Sales",
+  automatizar: "AI_Sales",
+  redes: "Instagram_TikTok",
+};
+
 export function efectosDeSeguimiento(
   respuestas: Record<string, string>,
   noul: Record<string, number>,
@@ -188,16 +195,20 @@ export function efectosDeSeguimiento(
   if (fact !== undefined && FACTURACIONES.has(fact)) {
     facturacion = fact as Facturacion;
   }
-  if (respuestas.cliente === "b2b") {
+  // Cada opción del reto de ventas apunta a un hermano. Referidos habla de vender a empresas
+  // (baja Instagram); redes habla de vender a personas (baja los tres programas B2B).
+  const elegidoVentas = VENTAS_POR_RETO[respuestas.reto_ventas ?? ""];
+  if (elegidoVentas) {
+    sumar(elegidoVentas, 2);
+  }
+  if (respuestas.reto_ventas === "referidos") {
     degradados.push("Instagram_TikTok");
-  } else if (respuestas.cliente === "b2c") {
+  } else if (respuestas.reto_ventas === "redes") {
     degradados.push("Sales_Machine", "LinkedIn_Sales", "AI_Sales");
-    sumar("Instagram_TikTok", 1);
   }
-  if (respuestas.reuniones === "menos_20") {
-    sumar("Sales_Machine", 2);
-  }
-  if (respuestas.uso_ia === "personal") {
+  if (respuestas.uso_ia === "ventas") {
+    sumar("AI_Sales", 1);
+  } else if (respuestas.uso_ia === "personal") {
     sumar("Second_Brain", 1);
   } else if (respuestas.uso_ia === "equipo") {
     if ((noul.operacion_desordenada ?? 0) > umbrales.umbral_dolor) {

@@ -24,7 +24,7 @@ export function pasoContacto(
   inicial: Contacto,
   alEnviar: (contacto: Contacto) => void,
 ): void {
-  medidor(4, 5);
+  medidor(0, 5);
   transicion(contenedor, () => {
     const nombre = campo("nombre", "Nombre", "text", inicial.nombre);
     const email = campo("email", "Correo", "email", inicial.email);
@@ -37,8 +37,9 @@ export function pasoContacto(
     });
     const errorAcepto = el("span", { class: "campo__error", id: "consentimiento-error" });
     const form = el("form", { novalidate: true, class: "pila" }, [
-      el("h2", {}, ["¿A dónde te enviamos tu diagnóstico?"]),
-      el("p", { class: "suave" }, ["Con esto JEV analiza tu reto y te mostramos tu ruta."]),
+      el("h1", {}, ["Diagnóstico 30X con ", el("em", { class: "acento" }, ["JEV"])]),
+      el("p", {}, ["Cuéntanos tu reto con tus palabras y JEV decide el programa de 30X más afín."]),
+      el("h2", {}, ["Antes de empezar"]),
       nombre.nodo,
       email.nodo,
       whatsapp.nodo,
@@ -56,7 +57,7 @@ export function pasoContacto(
         ]),
       ]),
       errorAcepto,
-      el("button", { type: "submit", class: "boton boton--primario" }, ["Analizar mi reto"]),
+      el("button", { type: "submit", class: "boton boton--primario" }, ["Empezar"]),
     ]);
     form.addEventListener("submit", (e) => {
       e.preventDefault();

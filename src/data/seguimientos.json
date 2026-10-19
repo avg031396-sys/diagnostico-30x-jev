@@ -30,20 +30,16 @@
       "familia": "ventas",
       "preguntas": [
         {
-          "id": "cliente",
-          "texto": "¿Le vendes a empresas o a personas?",
+          "id": "reto_ventas",
+          "texto": "¿Qué describe mejor tu reto en ventas?",
           "opciones": [
-            { "id": "b2b", "etiqueta": "A empresas" },
-            { "id": "b2c", "etiqueta": "A personas" }
-          ]
-        },
-        {
-          "id": "reuniones",
-          "texto": "¿Cuántas reuniones de venta tienes por semana?",
-          "solo_si": { "cliente": "b2b" },
-          "opciones": [
-            { "id": "menos_20", "etiqueta": "Menos de 20" },
-            { "id": "20_o_mas", "etiqueta": "20 o más" }
+            { "id": "sin_proceso", "etiqueta": "No tengo un proceso de ventas ordenado" },
+            {
+              "id": "referidos",
+              "etiqueta": "Vendo por referidos y quiero más reuniones con empresas"
+            },
+            { "id": "automatizar", "etiqueta": "Ya tengo proceso y quiero automatizarlo con IA" },
+            { "id": "redes", "etiqueta": "Le vendo a personas y quiero vender por redes" }
           ]
         }
       ]
@@ -54,11 +50,12 @@
       "preguntas": [
         {
           "id": "uso_ia",
-          "texto": "¿La IA es para ti, para tu equipo o para construir producto?",
+          "texto": "¿Para qué quieres usar la IA?",
           "opciones": [
-            { "id": "personal", "etiqueta": "Para mí" },
-            { "id": "equipo", "etiqueta": "Para mi equipo" },
-            { "id": "producto", "etiqueta": "Para construir producto" }
+            { "id": "personal", "etiqueta": "Para ahorrar horas en mi día a día" },
+            { "id": "equipo", "etiqueta": "Para que mi equipo la adopte" },
+            { "id": "producto", "etiqueta": "Para programar y lanzar un producto" },
+            { "id": "ventas", "etiqueta": "Para vender más: automatizar mi prospección" }
           ]
         }
       ]
@@ -69,8 +66,11 @@
       "preguntas": [
         {
           "id": "inversion_previa",
-          "texto": "¿Ya levantaste inversión antes?",
-          "opciones": [{ "id": "no", "etiqueta": "Todavía no" }, { "id": "si", "etiqueta": "Sí" }]
+          "texto": "¿Ya decidiste levantar capital?",
+          "opciones": [
+            { "id": "no", "etiqueta": "Todavía evalúo si me conviene" },
+            { "id": "si", "etiqueta": "Sí, quiero levantar en los próximos 6 meses" }
+          ]
         }
       ]
     },
@@ -80,10 +80,10 @@
       "preguntas": [
         {
           "id": "rol_growth",
-          "texto": "¿Diriges el área o la ejecutas?",
+          "texto": "En crecimiento (growth), ¿cuál es tu rol?",
           "opciones": [
-            { "id": "dirijo", "etiqueta": "La dirijo" },
-            { "id": "ejecuto", "etiqueta": "La ejecuto" }
+            { "id": "dirijo", "etiqueta": "Lidero un equipo de growth" },
+            { "id": "ejecuto", "etiqueta": "Hago yo las campañas y experimentos" }
           ]
         }
       ]

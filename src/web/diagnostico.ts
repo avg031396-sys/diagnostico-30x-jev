@@ -31,8 +31,6 @@ function pasoPerfil(contenedor: HTMLElement): void {
   medidor(1, 5);
   transicion(contenedor, () => {
     contenedor.append(
-      el("h1", {}, ["Diagnóstico 30X con ", el("em", { class: "acento" }, ["JEV"])]),
-      el("p", {}, ["Cuéntanos tu reto con tus palabras y JEV decide el programa de 30X más afín."]),
       el("h2", {}, ["¿Cuál es tu punto de partida?"]),
       el(
         "div",
@@ -124,7 +122,7 @@ function pasoReto(contenedor: HTMLElement): void {
     const enviar = el(
       "button",
       { type: "button", class: "boton boton--primario", disabled: true },
-      ["Continuar"],
+      ["Analizar mi reto"],
     );
     const actualizar = () => {
       const n = area.value.length;
@@ -134,10 +132,7 @@ function pasoReto(contenedor: HTMLElement): void {
     area.addEventListener("input", actualizar);
     enviar.addEventListener("click", () => {
       estado.reto = area.value.trim();
-      pasoContacto(contenedor, estado.contacto, (contacto) => {
-        estado.contacto = contacto;
-        enviarReto(contenedor);
-      });
+      enviarReto(contenedor);
     });
     contenedor.append(
       el("div", { class: "pila" }, [
@@ -237,7 +232,10 @@ export function iniciar(): void {
     ]),
     paso,
   );
-  pasoPerfil(paso);
+  pasoContacto(paso, estado.contacto, (contacto) => {
+    estado.contacto = contacto;
+    pasoPerfil(paso);
+  });
 }
 
 iniciar();

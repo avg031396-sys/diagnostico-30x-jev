@@ -41,7 +41,7 @@ test("borrar con correo y WhatsApp elimina el lead y su tarjeta; con otro WhatsA
   const final = await request.post(`/api/diagnosticos/${token}/finalizar`, {
     data: {
       dolores_confirmados: ["bloqueo_comercial", "ventas_por_referidos"],
-      respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" },
+      respuestas_seguimiento: { reto_ventas: "sin_proceso" },
     },
   });
   const { resultado_id } = await final.json();

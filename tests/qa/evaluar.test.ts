@@ -110,8 +110,6 @@ describe("totalizar y casos", () => {
     const limpio = CASOS.find((c) => c.id === "limpio-01");
     expect(limpio && respuestasAutomaticas(limpio)).toEqual({
       facturacion: "1M-20M",
-      cliente: "b2b",
-      reuniones: "20_o_mas",
     });
   });
 });

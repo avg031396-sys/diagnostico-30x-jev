@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { enviarReto, llenarContacto, RETO_VENTAS } from "./ayudas.ts";
 
-test("el contacto se pide al final, valida en el navegador y no envía nada a /api/", async ({
+test("el contacto se pide antes de empezar, valida en el navegador y no envía nada a /api/", async ({
   page,
 }) => {
   const peticiones: string[] = [];
@@ -11,12 +11,8 @@ test("el contacto se pide al final, valida en el navegador y no envía nada a /a
     }
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Fundador/a" }).click();
-  await page.getByRole("button", { name: "Tengo una idea" }).click();
-  await page.getByLabel("Tu reto, con tus palabras").fill(RETO_VENTAS);
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "4");
-  await page.getByRole("button", { name: "Analizar mi reto" }).click();
+  await expect(page.getByText("Antes de empezar")).toBeVisible();
+  await page.getByRole("button", { name: "Empezar" }).click();
   await expect(page.getByText("Escribe tu nombre.")).toBeVisible();
   await expect(page.getByText("Escribe un correo válido.")).toBeVisible();
   await expect(page.getByText("Escribe un WhatsApp válido, solo números.")).toBeVisible();
@@ -50,7 +46,7 @@ test("el reto exige 40 caracteres, muestra el contador y copia los ejemplos", as
   await llenarContacto(page);
   await page.getByRole("button", { name: "Fundador/a" }).click();
   await page.getByRole("button", { name: "Tengo una idea" }).click();
-  const boton = page.getByRole("button", { name: "Continuar" });
+  const boton = page.getByRole("button", { name: "Analizar mi reto" });
   await expect(boton).toBeDisabled();
   await page.getByLabel("Tu reto, con tus palabras").fill("corto");
   await expect(page.getByText("5/1200")).toBeVisible();

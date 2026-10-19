@@ -30,12 +30,12 @@ test("finalizar, resultado público, /r y asesor", async ({ request }) => {
   expect(pendiente.status()).toBe(200);
   const p = await pendiente.json();
   expect(p.pendiente).toBe(true);
-  expect(p.seguimientos[0].id).toBe("cliente");
+  expect(p.seguimientos[0].id).toBe("reto_ventas");
 
   const final = await request.post(`/api/diagnosticos/${token}/finalizar`, {
     data: {
       dolores_confirmados: DOLORES,
-      respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" },
+      respuestas_seguimiento: { reto_ventas: "sin_proceso" },
     },
   });
   expect(final.status()).toBe(200);
@@ -100,7 +100,7 @@ test("dos finalizar simultáneos (doble clic) dejan un solo resultado", async ({
   const { token } = await creado.json();
   const datos = {
     dolores_confirmados: DOLORES,
-    respuestas_seguimiento: { cliente: "b2b", reuniones: "menos_20" },
+    respuestas_seguimiento: { reto_ventas: "sin_proceso" },
   };
   const [a, b] = await Promise.all([
     request.post(`/api/diagnosticos/${token}/finalizar`, { data: datos }),

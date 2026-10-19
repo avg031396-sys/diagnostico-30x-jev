@@ -11,10 +11,8 @@ test("chips, seguimientos y navegación al resultado", async ({ page }) => {
   await page.getByRole("button", { name: "+ agregar" }).click();
   await expect(page.locator(".chip--sumar")).toHaveCount(9); // 8 dolores restantes + el botón
   await page.getByRole("button", { name: "Confirmar" }).click();
-  await expect(page.getByText("¿Le vendes a empresas o a personas?")).toBeVisible();
-  await page.getByRole("button", { name: "A empresas" }).click();
-  await expect(page.getByText("¿Cuántas reuniones de venta tienes por semana?")).toBeVisible();
-  await page.getByRole("button", { name: "Menos de 20" }).click();
+  await expect(page.getByText("¿Qué describe mejor tu reto en ventas?")).toBeVisible();
+  await page.getByRole("button", { name: "No tengo un proceso de ventas ordenado" }).click();
   await page.waitForURL(/\/r\/[0-9A-Za-z]{10}$/);
   const id = page.url().split("/r/")[1] ?? "";
   const token = await page.evaluate((i) => sessionStorage.getItem(`diag:${i}`), id);
@@ -39,7 +37,7 @@ test("el reto vago pide aclaración con una sola llamada a /aclarar", async ({ p
     "true",
   );
   await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByText("¿Ya levantaste inversión antes?")).toBeVisible();
+  await expect(page.getByText("¿Ya decidiste levantar capital?")).toBeVisible();
   expect(posts.filter((p) => p.endsWith("/aclarar"))).toHaveLength(1);
   expect(posts.filter((p) => p === "/api/diagnosticos")).toHaveLength(1);
 });
